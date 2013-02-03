@@ -3,7 +3,7 @@ import types
 
 class TestCase(unittest.TestCase):
 
-    BUILTIN_TYPES = (int,float,str,list,tuple,object,type)
+    EXTENDABLE_BUILTIN_TYPES = (int,float,str,list,tuple,object,type)
 
     def subject(self, someobject):
         """
@@ -17,9 +17,12 @@ class TestCase(unittest.TestCase):
 
             return _newfunc
 
+        # Bool object is not extendable type, so can not have should property
+        if type(someobject) is bool:
+            return someobject
 
         # Create wrapper class if built-in type object
-        if type(someobject) in self.BUILTIN_TYPES:
+        if type(someobject) in self.EXTENDABLE_BUILTIN_TYPES:
             classname = 'T' + type(someobject).__name__
             BuiltinWrapperClass = type(classname, (type(someobject), ), {})
             someobject = BuiltinWrapperClass(someobject)
@@ -71,6 +74,14 @@ class Should:
 
     def not_be(self, other):
         self.testcase.assertIsNot(self.context, other)
+
+    @property
+    def be_true(self):
+        self.testcase.assertTrue(self.context)
+
+    @property
+    def be_false(self):
+        self.testcase.assertFalse(self.context)
 
     def be_in(self, other):
         self.testcase.assertIn(self.context, other)

@@ -16,14 +16,14 @@ class TestCaseIntegrationTest(flowp.testing.TestCase):
         subject = self.subject(subject)
         self.assertIsInstance(subject.should, flowp.testing.Should)
 
-    def test_subject_declaration_add_should_object_to_every_object_in_object_descriptor(self):
+    def test_subject_declaration_add_should_object_to_every_element_in_object_descriptor(self):
         subject = self.Something()
         subject = self.subject(subject)
         self.assertIsInstance(subject.a.should, flowp.testing.Should)
         self.assertIsInstance(subject.b.should, flowp.testing.Should)
         self.assertIsInstance(subject.c().should, flowp.testing.Should)
 
-    def test_should_asserts_at_subject_object(self):
+    def test_should_asserts_with_subject_declaration(self):
         sub = self.Something()
         sub = self.subject(sub)
         sub.should.be_instanceof(self.Something)
@@ -32,6 +32,15 @@ class TestCaseIntegrationTest(flowp.testing.TestCase):
         sub.c().should.be_instanceof(str)
         sub.c().should == "def"
 
+    def test_truefalse_should_asserts_with_subject_declaration(self):
+        """
+        TODO: This test fails, bool objects (True, False) are not extendable types,
+        so they are kind a problematic at this point. Needed different solution.
+        """
+        true_sub = self.subject(True)
+        false_sub = self.subject(False)
+        true_sub.should.be_true
+        false_sub.should.be_false
 
 
 class ShouldTest(unittest.TestCase):
@@ -40,6 +49,13 @@ class ShouldTest(unittest.TestCase):
 
     class Int(int):
         pass
+
+    class Bool:
+        def __init__(self, value:bool):
+            self.value = value
+
+        def __bool__(self):
+            return self.value
 
     def setUp(self):
         self.context = self.Str("abcd")
@@ -60,17 +76,19 @@ class ShouldTest(unittest.TestCase):
 
         mock_method.assert_called_with(self.context, 'abcd')
 
-#    def test_do_truefalse_should_assert(self):
-#        context = self.Bool(True)
-#        context.should = flowp.testing.Should(context)
-#
-#        with patch.object(self, 'assertTrue') as mock_method:
-#            context.should.be_true
-#            mock_method.assert_called_with(context)
-#
-#        with patch.object(self, 'assertFalse') as mock_method:
-#            context.should.be_false
-#            mock_method.assert_called_with(context)
+    def test_do_truefalse_should_assert(self):
+        context = self.Bool(True)
+        context.should = flowp.testing.Should(context, self)
+
+        with patch.object(self, 'assertTrue') as mock_method:
+            context.should.be_true
+
+        mock_method.assert_called_with(context)
+
+        with patch.object(self, 'assertFalse') as mock_method:
+            context.should.be_false
+
+        mock_method.assert_called_with(context)
 
     def test_do_is_should_assert(self):
         with patch.object(self, 'assertIs') as mock_method:
