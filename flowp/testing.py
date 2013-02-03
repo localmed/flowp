@@ -3,7 +3,7 @@ import types
 
 class TestCase(unittest.TestCase):
 
-    EXTENDABLE_BUILTIN_TYPES = (int,float,str,list,tuple,object,type,dict)
+    EXTENDABLE_BUILTIN_TYPES = (int,float,str,list,tuple,dict)
 
     def subject(self, someobject):
         """
@@ -11,35 +11,36 @@ class TestCase(unittest.TestCase):
         create class that inherits from that built-in, and transform given object to that class (it is needed
         if we want to set should property to built-in).
         """
-        def _function_subject(decfunc):
+        def function_subject(decfunc):
             def _newfunc(*args, **kwargs):
                 return self.subject(decfunc(*args, **kwargs))
 
             return _newfunc
 
-        # Bool object is not extendable type, so can not have should property
-        if type(someobject) is bool:
+        # Do not decorate these objects
+        # bool object is not extendable type, so can not have should property
+        # type object decorating is not needed for now
+        if type(someobject) in (bool, type):
             return someobject
+
+        # Decorate methods objects
+        if type(someobject) in (types.MethodType, types.BuiltinMethodType):
+            return function_subject(someobject)
 
         # Create wrapper class if built-in type object
         if type(someobject) in self.EXTENDABLE_BUILTIN_TYPES:
             classname = 'T' + type(someobject).__name__
             BuiltinWrapperClass = type(classname, (type(someobject), ), {})
             someobject = BuiltinWrapperClass(someobject)
-
         else:
-            # Wrap elements in object descriptor, do self.subject in recursion
+            # Decorate elements in object descriptor, do self.subject on every element (recursion step)
             for elName in dir(someobject):
+                # Pass deep private methods
                 if elName.startswith('__'):
                     continue
 
                 descrEl = getattr(someobject, elName)
-
-                # if function, decorate return values
-                if type(descrEl) is types.MethodType:
-                    setattr(someobject, elName, self.subject(_function_subject(descrEl)))
-                else:
-                    setattr(someobject, elName, self.subject(descrEl))
+                setattr(someobject, elName, self.subject(descrEl))
 
 
         # Set Should object to should property

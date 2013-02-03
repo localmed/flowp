@@ -12,8 +12,7 @@ class TestCaseIntegrationTest(flowp.testing.TestCase):
             return "def"
 
     def test_subject_declaration_add_should_object(self):
-        subject = "abc"
-        subject = self.subject(subject)
+        subject = self.subject("abc")
         self.assertIsInstance(subject.should, flowp.testing.Should)
 
     def test_subject_declaration_add_should_object_to_every_element_in_object_descriptor(self):
@@ -22,6 +21,15 @@ class TestCaseIntegrationTest(flowp.testing.TestCase):
         self.assertIsInstance(subject.a.should, flowp.testing.Should)
         self.assertIsInstance(subject.b.should, flowp.testing.Should)
         self.assertIsInstance(subject.c().should, flowp.testing.Should)
+
+    def test_subject_declaration_add_should_object_to_builtin_methods(self):
+        """
+        TODO: this test fails, need to change self.subject decorating algorithm
+        (problems with endless recursion at builtin types)
+        """
+        s = self.subject("abac")
+        self.assertTrue(hasattr(s.count('a'), 'should'))
+        s.count('a').should == 2
 
     def test_should_asserts_with_subject_declaration(self):
         sub = self.Something()
