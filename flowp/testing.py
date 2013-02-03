@@ -11,6 +11,7 @@ class TestCase(unittest.TestCase):
         create class that inherits from that built-in, and transform given object to that class (it is needed
         if we want to set should property to built-in).
         """
+        # Decorator for methods
         def function_subject(decfunc):
             def _newfunc(*args, **kwargs):
                 return self.subject(decfunc(*args, **kwargs))
@@ -48,7 +49,16 @@ class TestCase(unittest.TestCase):
         return someobject
 
 class Should:
+    """
+    Should object is set by TestCase.subject method. Each method of Should object
+    is kind a unittest.TestCase assert.
+    """
     def __init__(self, context, testcase:TestCase):
+        """
+        Construct Should object
+        @param context: context of Should object
+        @param testcase: Reference to TestCase object
+        """
         self.context = context
         self.testcase = testcase
 

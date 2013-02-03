@@ -36,3 +36,5 @@ is equal to
 ```python
 self.assertEqual(self.obj.a, "abc")
 ```
+
+Should expressions behave exactly like unittest.TestCase assert expressions, but they are more cleaner and handy.
