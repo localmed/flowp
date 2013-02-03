@@ -3,7 +3,7 @@ import types
 
 class TestCase(unittest.TestCase):
 
-    EXTENDABLE_BUILTIN_TYPES = (int,float,str,list,tuple,object,type)
+    EXTENDABLE_BUILTIN_TYPES = (int,float,str,list,tuple,object,type,dict)
 
     def subject(self, someobject):
         """
