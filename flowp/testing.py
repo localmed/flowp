@@ -25,7 +25,7 @@ class TestCase(unittest.TestCase):
             return someobject
 
         # Decorate methods objects
-        if type(someobject) in (types.MethodType, types.BuiltinMethodType):
+        if type(someobject) in (types.MethodType, types.FunctionType, types.BuiltinMethodType):
             return function_subject(someobject)
 
         # Create wrapper class if built-in type object
@@ -34,7 +34,7 @@ class TestCase(unittest.TestCase):
             BuiltinWrapperClass = type(classname, (type(someobject), ), {})
             someobject = BuiltinWrapperClass(someobject)
         else:
-            # Decorate elements in object descriptor, do self.subject on every element (recursion step)
+            # Decorate elements in object dictionary, do self.subject on every element (recursion step)
             for elName in dir(someobject):
                 # Pass deep private methods
                 if elName.startswith('__'):

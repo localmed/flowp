@@ -1,10 +1,10 @@
 # Module have name typess not types because of annoying PyCharm TestRunner bug
 # http://youtrack.jetbrains.com/issue/PY-8697
 
-from flowp import testing
+import flowp.testing
 from flowp import types
 
-class ListTest(testing.TestCase):
+class ListTest(flowp.testing.TestCase):
     def setUp(self):
         self.l = self.subject(types.List([1,2,3]))
 
@@ -34,7 +34,7 @@ class ListTest(testing.TestCase):
         lstr.join('-').should == types.Str("a-b-c")
 
 
-class StrIntTest(testing.TestCase):
+class StrIntTest(flowp.testing.TestCase):
    def test_type_transformation_properties(self):
        some_int = self.subject(types.Int(3))
        some_str = self.subject(types.Str("2"))

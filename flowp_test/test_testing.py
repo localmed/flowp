@@ -15,7 +15,7 @@ class TestCaseIntegrationTest(flowp.testing.TestCase):
         subject = self.subject("abc")
         self.assertIsInstance(subject.should, flowp.testing.Should)
 
-    def test_subject_declaration_add_should_object_to_every_element_in_object_descriptor(self):
+    def test_subject_declaration_add_should_object_to_every_element_in_object_dictionary(self):
         subject = self.Something()
         subject = self.subject(subject)
         self.assertIsInstance(subject.a.should, flowp.testing.Should)
@@ -31,6 +31,15 @@ class TestCaseIntegrationTest(flowp.testing.TestCase):
         self.assertTrue(hasattr(s.count('a'), 'should'))
         s.count('a').should == 2
 
+    def test_subject_declaration_add_should_object_to_descriptor_objects_values(self):
+        class Something:
+            @property
+            def x(self):
+                return 1
+
+        subject = self.subject(Something())
+        subject.x.should == 1
+
     def test_should_asserts_with_subject_declaration(self):
         sub = self.Something()
         sub = self.subject(sub)
@@ -40,7 +49,7 @@ class TestCaseIntegrationTest(flowp.testing.TestCase):
         sub.c().should.be_instanceof(str)
         sub.c().should == "def"
 
-    def test_truefalse_should_asserts_with_subject_declaration(self):
+    def test_subject_declaration_add_should_object_to_bool_object(self):
         """
         TODO: This test fails, bool objects (True, False) are not extendable types,
         so they are kind a problematic at this point. Needed different solution.
