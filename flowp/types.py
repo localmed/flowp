@@ -1,58 +1,106 @@
-import functools
+from functools import reduce
 
-class List(list):
-    # Types transformation properties
+class Should:
+    def __init__(self, context):
+        """
+        Construct Should object
+        @param context: context of Should object
+        """
+        self.context = context
+
+    def __eq__(self, other):
+        assert self.context == other
+
+    def __ne__(self, other):
+        assert self.context != other
+
+    def __lt__(self, other):
+        assert self.context < other
+
+    def __le__(self, other):
+        assert self.context <= other
+
+    def __gt__(self, other):
+        assert self.context > other
+
+    def __ge__(self, other):
+        assert self.context >= other
+
+    def be(self, other):
+        assert self.context is other
+
+    def not_be(self, other):
+        assert self.context is not other
+
     @property
-    def set(self):
-        return Set(self)
+    def be_true(self):
+        assert self.context is True
 
     @property
-    def tuple(self):
-        return Tuple(self)
+    def be_false(self):
+        assert self.context is False
 
     @property
-    def str(self):
-        return Str(self)
+    def be_none(self):
+        assert self.context is None
 
-    # Function operation properties
-    @property
-    def min(self):
-        return min(self)
+    def be_in(self, other):
+        assert self.context in other
 
-    @property
-    def max(self):
-        return max(self)
+    def not_be_in(self, other):
+        assert self.context not in other
 
-    @property
-    def len(self):
-        return Int(len(self))
+    def be_instanceof(self, other):
+        assert isinstance(self.context, other) is True
 
-    @property
-    def sum(self):
-        return sum(self)
+    def not_be_instanceof(self, other):
+        assert isinstance(self.context, other) is False
 
-    # Function operation methods
-    def map(self, func):
-        return List(map(func, self))
-
-    def filter(self, func):
-        return List(filter(func, self))
-
-    def reduce(self, func):
-        return List(functools.reduce(func, self))
-
-class Tuple(tuple):
+class Object:
     pass
 
-class Set(set):
+class Iterable(Object):
     pass
 
-class Str(str):
+class List(list, Iterable):
+    pass
+
+class Tuple(tuple, Iterable):
+    pass
+
+class Set(set, Iterable):
+    pass
+
+class Frozenset(frozenset, Iterable):
+    pass
+
+class Bytes(bytes, Iterable):
+    pass
+
+class Bytearray(bytearray, Iterable):
+    pass
+
+class Str(str, Iterable):
     @property
     def int(self):
         return Int(self)
 
-class Int(int):
+class Int(int, Object):
     @property
     def str(self):
         return Str(self)
+
+class Float(float, Object):
+    pass
+
+class Complex(complex, Object):
+    pass
+
+class TypesPropagator:
+    pass
+
+class BoolProxy:
+    pass
+
+class NoneProxy:
+    pass
