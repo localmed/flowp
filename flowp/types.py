@@ -139,36 +139,29 @@ class Dict(dict):
 
 class TypesPropagator:
     def __getattribute__(self, item):
-        def method_decorator(method):
-            def new_method(*args, **kwargs):
-                return this(method(*args, **kwargs))
-            return new_method
-
-        value = object.__getattribute__(self, item)
-        if type(value) in (types.MethodType, types.BuiltinMethodType, types.LambdaType):
-            return this(method_decorator(value))
-        return this(value)
+        return this(object.__getattribute__(self, item))
 
 
-class BoolProxy:
-    def __init__(self, value):
-        self.value = value
+class ObjectProxy:
+    def __init__(self, subject):
+        self.subject = subject
 
+    def __getattr__(self, item):
+        return getattr(self.subject, item)
+
+
+class BoolProxy(ObjectProxy):
     def __bool__(self):
-        return self.value
+        return self.subject
 
 
-class NoneProxy:
-    def __init__(self, value):
-        self.value = value
-
-
-class Function:
+class NoneProxy(ObjectProxy):
     pass
 
 
-class Method:
-    pass
+class FunctionProxy(ObjectProxy):
+    def __call__(self, *args, **kwargs):
+        return self.subject(*args, **kwargs)
 
 
 def this(obj):
@@ -182,6 +175,11 @@ def this(obj):
         tuple: Tuple,
         dict: Dict,
         set: Set,
+        types.MethodType: FunctionProxy,
+        types.BuiltinMethodType: FunctionProxy,
+        types.FunctionType: FunctionProxy,
+        types.BuiltinFunctionType: FunctionProxy,
+        types.LambdaType: FunctionProxy,
     }
 
     obj_type = type(obj)

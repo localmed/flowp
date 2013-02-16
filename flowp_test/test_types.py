@@ -112,10 +112,6 @@ class DescribeTypesPropagator(flowp.testing.TestCase):
         self.obj.obj_att
         this_mock.assert_called_with('obj_att')
 
-    @mock.patch('flowp.types.this')
-    def it_pass_every_method_call_return_value_through_this_function(self, this_mock):
-        self.obj.some_method()
-        this_mock.assert_called_with('abc')
 
 class DescribeThisMethod(flowp.testing.TestCase):
     def it_transforms_builtin_types_to_flowp_types(self):
@@ -138,9 +134,9 @@ class DescribeThisMethod(flowp.testing.TestCase):
             return 2
 
         obj = SomeClass()
-        assert isinstance(flowp.types.this(function), flowp.types.Function)
-        assert isinstance(flowp.types.this(obj.method), flowp.types.Method)
-        assert isinstance(flowp.types.this("abc".index), flowp.types.Method)
+        assert isinstance(flowp.types.this(function), flowp.types.FunctionProxy)
+        assert isinstance(flowp.types.this(obj.method), flowp.types.FunctionProxy)
+        assert isinstance(flowp.types.this("abc".index), flowp.types.FunctionProxy)
 
     def it_add_flowp_object_class_as_mixin_if_not_builtin_type(self):
         class SomeClass:
@@ -152,3 +148,42 @@ class DescribeThisMethod(flowp.testing.TestCase):
         assert isinstance(flowp.types.this(obj), SomeClass)
         assert obj.a == 111
         assert hasattr(obj, 'should')
+
+
+class DescribeObjectProxy(flowp.testing.TestCase):
+    def before_each(self):
+        self.subject = "abc"
+        self.obj = flowp.types.ObjectProxy(self.subject)
+
+    def it_stores_subject_at_subject_attribute(self):
+        assert self.obj.subject is self.subject
+
+    def it_pass_lookup_to_subject_attributes(self):
+        assert self.obj.index("c") == 2
+
+    def it_pass_lookup_to_subject_property_attributes(self):
+        class SomeClass:
+            @property
+            def prop(self):
+                return 1
+
+        obj = flowp.types.ObjectProxy(SomeClass())
+        assert obj.prop == 1
+
+
+
+class DescribeFunctionProxy(flowp.testing.TestCase):
+    def before_each(self):
+        def func(x) -> "Annotation":
+            return x
+
+        func.someatt = 1
+        self.fproxy = flowp.types.FunctionProxy(func)
+
+    def it_is_callable(self):
+        assert self.fproxy(1) == 1
+        assert self.fproxy("abc") == "abc"
+
+    def it_lookup_to_function_attributes(self):
+        assert self.fproxy.__annotations__ == {'return': 'Annotation'}
+        assert self.fproxy.someatt == 1
