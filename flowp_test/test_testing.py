@@ -1,5 +1,6 @@
 import flowp.testing
 
+
 class TestCaseIntegrationTest(flowp.testing.TestCase):
     class Something:
         def __init__(self):
