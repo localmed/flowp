@@ -1,3 +1,4 @@
+import functools
 import types
 
 
@@ -86,7 +87,38 @@ class Object:
 
 
 class Iterable(Object):
-    pass
+    @property
+    def len(self):
+        return len(self)
+
+    @property
+    def all(self):
+        return all(self)
+
+    @property
+    def any(self):
+        return any(self)
+
+    @property
+    def min(self):
+        return min(self)
+
+    @property
+    def max(self):
+        return max(self)
+
+    @property
+    def sum(self):
+        return sum(self)
+
+    def map(self, func):
+        return map(func, self)
+
+    def filter(self, func):
+        return filter(func, self)
+
+    def reduce(self, func):
+        return functools.reduce(func, self)
 
 
 class List(list, Iterable):

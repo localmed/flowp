@@ -92,6 +92,47 @@ class DescribeObject(flowp.testing.TestCase):
         assert ob.getattr('x') == 1
 
 
+class DescribeIterable(flowp.testing.TestCase):
+    class Tuple(tuple, flowp.types.Iterable):
+        pass
+
+    def before_each(self):
+        self.tuple1 = self.Tuple((1, 2, 3))
+        self.tuple2 = self.Tuple((True, True, True))
+        self.tuple3 = self.Tuple((True, False, True))
+        self.tuple4 = self.Tuple((False, False, False))
+
+    def it_have_len_property(self):
+        assert self.tuple1.len == 3
+
+    def it_have_all_property(self):
+        assert self.tuple2.all
+        assert not self.tuple3.all
+
+    def it_have_any_property(self):
+        assert self.tuple2.any
+        assert self.tuple3.any
+        assert not self.tuple4.any
+
+    def it_have_min_property(self):
+        assert self.tuple1.min == 1
+
+    def it_have_max_property(self):
+        assert self.tuple1.max == 3
+
+    def it_have_sum_property(self):
+        assert self.tuple1.sum == 6
+
+    def it_have_map_method(self):
+        self.tuple1.map(lambda x: 2*x) == self.Tuple((2, 4, 6))
+
+    def it_have_filter_method(self):
+        self.tuple1.filter(lambda x: x in (1, 3)) == self.Tuple((1, 3))
+
+    def it_have_reduce_method(self):
+        self.tuple1.reduce(lambda a, b: a*b) == 6
+
+
 class DescribeTypesPropagator(flowp.testing.TestCase):
     class SomeClass(flowp.types.TypesPropagator):
         cls_att = 'cls_att'
