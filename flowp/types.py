@@ -1,4 +1,4 @@
-from functools import reduce
+import types
 
 
 class Should:
@@ -78,8 +78,12 @@ class Object:
     def is_instanceof(self, klass):
         return isinstance(self, klass)
 
-    def is_subclassof(self, klass):
-        return issubclass(self, klass)
+    def hasattr(self, name):
+        return hasattr(self, name)
+
+    def getattr(self, name):
+        return getattr(self, name)
+
 
 class Iterable(Object):
     pass
@@ -129,13 +133,64 @@ class Complex(complex, Object):
     pass
 
 
-class TypesPropagator:
+class Dict(dict):
     pass
+
+
+class TypesPropagator:
+    def __getattribute__(self, item):
+        def method_decorator(method):
+            def new_method(*args, **kwargs):
+                return this(method(*args, **kwargs))
+            return new_method
+
+        value = object.__getattribute__(self, item)
+        if type(value) in (types.MethodType, types.BuiltinMethodType, types.LambdaType):
+            return this(method_decorator(value))
+        return this(value)
 
 
 class BoolProxy:
-    pass
+    def __init__(self, value):
+        self.value = value
+
+    def __bool__(self):
+        return self.value
 
 
 class NoneProxy:
+    def __init__(self, value):
+        self.value = value
+
+
+class Function:
     pass
+
+
+class Method:
+    pass
+
+
+def this(obj):
+    types_map = {
+        int: Int,
+        float: Float,
+        str: Str,
+        bool: BoolProxy,
+        type(None): NoneProxy,
+        list: List,
+        tuple: Tuple,
+        dict: Dict,
+        set: Set,
+    }
+
+    obj_type = type(obj)
+    if obj_type in types_map.keys():
+        new_type = types_map[obj_type]
+        return new_type(obj)
+
+    # if not built-in type, inject Object class inheritance to object copy
+    obj_class_name = obj_type.__name__
+    newclass = type(obj_class_name, (obj_type, Object), dict())
+    obj.__class__ = newclass
+    return obj
