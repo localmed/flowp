@@ -20,7 +20,8 @@ class BDDTestCase(type):
         return type.__new__(cls, name, bases, new_namespace)
 
 
-class TestCase(unittest.TestCase, metaclass=BDDTestCase):
+class Behavior(unittest.TestCase):
+    __metaclass__=BDDTestCase
 
     def subject(self, someobject):
         pass

@@ -2,7 +2,7 @@ import functools
 import types
 
 
-class Should:
+class Should(object):
     def __init__(self, context):
         """
         Construct Should object
@@ -61,7 +61,7 @@ class Should:
         assert isinstance(self.context, other) is False
 
 
-class Object:
+class Object(object):
     @property
     def should(self):
         if not hasattr(self, '_should'):

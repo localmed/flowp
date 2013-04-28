@@ -1,13 +1,18 @@
 import mock
-import flowp.types
-import flowp.testing
+import flowp.typess
+from flowp.testing import Behavior
 
 
-class DescribeShould(flowp.testing.TestCase):
+class SomeTest(Behavior):
+    def it_do_something(self):
+        pass
+
+
+class Should(Behavior):
     class Int(int):
         pass
 
-    class Bool:
+    class Bool(object):
         def __init__(self, value):
             self.value = value
 
@@ -17,21 +22,21 @@ class DescribeShould(flowp.testing.TestCase):
     class List(list):
         pass
 
-    class NoneType:
+    class NoneType(object):
         def __init__(self):
             self.value = None
 
     def before_each(self):
         self.int = self.Int(1)
-        self.int.should = flowp.types.Should(self.int)
+        self.int.should = flowp.typess.Should(self.int)
         self.true = self.Bool(True)
-        self.true.should = flowp.types.Should(self.true)
+        self.true.should = flowp.typess.Should(self.true)
         self.false = self.Bool(False)
-        self.false.should = flowp.types.Should(self.false)
+        self.false.should = flowp.typess.Should(self.false)
         self.list = self.List([1, 2, 3])
-        self.list.should = flowp.types.Should(self.list)
+        self.list.should = flowp.typess.Should(self.list)
         self.none = self.NoneType()
-        self.none.should = flowp.types.Should(self.none)
+        self.none.should = flowp.typess.Should(self.none)
 
     def it_do_correct_should_asserts(self):
         self.int.should.be_instanceof(self.Int)
@@ -56,23 +61,23 @@ class DescribeShould(flowp.testing.TestCase):
             self.int.should == 2
 
 
-class DescribeObject(flowp.testing.TestCase):
-    class SomeClass(flowp.types.Object):
+class Object(Behavior):
+    class SomeClass(flowp.typess.Object):
         x = 1
 
     def before_each(self):
-        self.object = flowp.types.Object()
+        self.object = flowp.typess.Object()
 
     def it_have_should_object(self):
-        assert isinstance(self.object.should, flowp.types.Should)
+        assert isinstance(self.object.should, flowp.typess.Should)
         assert self.object.should.context is self.object
 
     def it_have_type_property(self):
-        assert self.object.type is flowp.types.Object
+        assert self.object.type is flowp.typess.Object
         assert self.object.type is not object
 
     def it_have_is_callable_property(self):
-        class Callable(flowp.types.Object):
+        class Callable(flowp.typess.Object):
             def __call__(self):
                 return True
 
@@ -80,7 +85,7 @@ class DescribeObject(flowp.testing.TestCase):
         assert Callable().is_callable
 
     def it_have_is_instanceof_method(self):
-        assert self.object.is_instanceof(flowp.types.Object)
+        assert self.object.is_instanceof(flowp.typess.Object)
 
     def it_have_hasattr_method(self):
         ob = self.SomeClass()
@@ -92,8 +97,8 @@ class DescribeObject(flowp.testing.TestCase):
         assert ob.getattr('x') == 1
 
 
-class DescribeIterable(flowp.testing.TestCase):
-    class Tuple(tuple, flowp.types.Iterable):
+class Iterable(Behavior):
+    class Tuple(tuple, flowp.typess.Iterable):
         pass
 
     def before_each(self):
@@ -133,8 +138,8 @@ class DescribeIterable(flowp.testing.TestCase):
         self.tuple1.reduce(lambda a, b: a*b) == 6
 
 
-class DescribeTypesPropagator(flowp.testing.TestCase):
-    class SomeClass(flowp.types.TypesPropagator):
+class TypesPropagator(Behavior):
+    class SomeClass(flowp.typess.TypesPropagator):
         cls_att = 'cls_att'
 
         def __init__(self):
@@ -146,7 +151,7 @@ class DescribeTypesPropagator(flowp.testing.TestCase):
     def before_each(self):
         self.obj = self.SomeClass()
 
-    @mock.patch('flowp.types.this')
+    @mock.patch('flowp.typess.this')
     def it_pass_every_attribute_lookup_value_through_this_function(self, this_mock):
         self.obj.cls_att
         this_mock.assert_called_with('cls_att')
@@ -154,17 +159,17 @@ class DescribeTypesPropagator(flowp.testing.TestCase):
         this_mock.assert_called_with('obj_att')
 
 
-class DescribeThisMethod(flowp.testing.TestCase):
+class ThisMethod(Behavior):
     def it_transforms_builtin_types_to_flowp_types(self):
-        assert isinstance(flowp.types.this(1), flowp.types.Int)
-        assert isinstance(flowp.types.this(1.1), flowp.types.Float)
-        assert isinstance(flowp.types.this("abc"), flowp.types.Str)
-        assert isinstance(flowp.types.this(True), flowp.types.BoolProxy)
-        assert isinstance(flowp.types.this(None), flowp.types.NoneProxy)
-        assert isinstance(flowp.types.this([1, 2, 3]), flowp.types.List)
-        assert isinstance(flowp.types.this((1, 2, 3)), flowp.types.Tuple)
-        assert isinstance(flowp.types.this({'a': 1, 'b': 2}), flowp.types.Dict)
-        assert isinstance(flowp.types.this({1, 2, 3}), flowp.types.Set)
+        assert isinstance(flowp.typess.this(1), flowp.typess.Int)
+        assert isinstance(flowp.typess.this(1.1), flowp.typess.Float)
+        assert isinstance(flowp.typess.this("abc"), flowp.typess.Str)
+        assert isinstance(flowp.typess.this(True), flowp.typess.BoolProxy)
+        assert isinstance(flowp.typess.this(None), flowp.typess.NoneProxy)
+        assert isinstance(flowp.typess.this([1, 2, 3]), flowp.typess.List)
+        assert isinstance(flowp.typess.this((1, 2, 3)), flowp.typess.Tuple)
+        assert isinstance(flowp.typess.this({'a': 1, 'b': 2}), flowp.typess.Dict)
+        assert isinstance(flowp.typess.this({1, 2, 3}), flowp.typess.Set)
 
     def it_transform_function_types_to_flowp_function_types(self):
         class SomeClass:
@@ -175,9 +180,9 @@ class DescribeThisMethod(flowp.testing.TestCase):
             return 2
 
         obj = SomeClass()
-        assert isinstance(flowp.types.this(function), flowp.types.FunctionProxy)
-        assert isinstance(flowp.types.this(obj.method), flowp.types.FunctionProxy)
-        assert isinstance(flowp.types.this("abc".index), flowp.types.FunctionProxy)
+        assert isinstance(flowp.typess.this(function), flowp.typess.FunctionProxy)
+        assert isinstance(flowp.typess.this(obj.method), flowp.typess.FunctionProxy)
+        assert isinstance(flowp.typess.this("abc".index), flowp.typess.FunctionProxy)
 
     def it_add_flowp_object_class_as_mixin_if_not_builtin_type(self):
         class SomeClass:
@@ -185,16 +190,16 @@ class DescribeThisMethod(flowp.testing.TestCase):
 
         obj = SomeClass()
         obj.a = 111
-        assert isinstance(flowp.types.this(obj), flowp.types.Object)
-        assert isinstance(flowp.types.this(obj), SomeClass)
+        assert isinstance(flowp.typess.this(obj), flowp.typess.Object)
+        assert isinstance(flowp.typess.this(obj), SomeClass)
         assert obj.a == 111
         assert hasattr(obj, 'should')
 
 
-class DescribeObjectProxy(flowp.testing.TestCase):
+class ObjectProxy(Behavior):
     def before_each(self):
         self.subject = "abc"
-        self.obj = flowp.types.ObjectProxy(self.subject)
+        self.obj = flowp.typess.ObjectProxy(self.subject)
 
     def it_stores_subject_at_subject_attribute(self):
         assert self.obj.subject is self.subject
@@ -208,23 +213,22 @@ class DescribeObjectProxy(flowp.testing.TestCase):
             def prop(self):
                 return 1
 
-        obj = flowp.types.ObjectProxy(SomeClass())
+        obj = flowp.typess.ObjectProxy(SomeClass())
         assert obj.prop == 1
 
 
 
-class DescribeFunctionProxy(flowp.testing.TestCase):
+class FunctionProxy(Behavior):
     def before_each(self):
-        def func(x) -> "Annotation":
+        def func(x):
             return x
 
         func.someatt = 1
-        self.fproxy = flowp.types.FunctionProxy(func)
+        self.fproxy = flowp.typess.FunctionProxy(func)
 
     def it_is_callable(self):
         assert self.fproxy(1) == 1
         assert self.fproxy("abc") == "abc"
 
     def it_lookup_to_function_attributes(self):
-        assert self.fproxy.__annotations__ == {'return': 'Annotation'}
         assert self.fproxy.someatt == 1
