@@ -1,5 +1,5 @@
 import mock
-from flowp import typess as ftypes
+from flowp import ftypes
 from flowp.testing import Behavior
 
 
@@ -146,7 +146,7 @@ class TypesPropagator(Behavior):
     def before_each(self):
         self.obj = self.SomeClass()
 
-    @mock.patch('flowp.typess.this')
+    @mock.patch('flowp.ftypes.this')
     def it_pass_every_attribute_lookup_value_through_this_function(self, this_mock):
         self.obj.cls_att
         this_mock.assert_called_with('cls_att')
