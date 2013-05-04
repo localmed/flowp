@@ -40,12 +40,13 @@ class TestLoader(unittest.TestLoader):
 
 
 class TextTestResult(unittest.TestResult):
-    separator1 = '=' * 70
+    separator1 = '-' * 70
     separator2 = '-' * 70
     groups = set()
     COLOR_GREEN = '\033[92m'
     COLOR_RED = '\033[91m'
     COLOR_END = '\033[0m'
+    COLOR_BLUE = '\033[94m'
 
     def __init__(self, stream, descriptions, verbosity):
         super(TextTestResult, self).__init__()
@@ -60,12 +61,7 @@ class TextTestResult(unittest.TestResult):
 
     def getDescription(self, test):
         test_name = str(test).split()[0].replace('_', ' ')[3:]
-
-        doc_first_line = test.shortDescription()
-        if self.descriptions and doc_first_line:
-            return '\n'.join((test_name, doc_first_line))
-        else:
-            return test_name
+        return test_name
 
     def getFormattedDescription(self, test):
         prefix = '    - '
@@ -149,12 +145,36 @@ class TextTestResult(unittest.TestResult):
         self.printErrorList('ERROR', self.errors)
         self.printErrorList('FAIL', self.failures)
 
+    def _format_traceback_line(self, line):
+        line = '  ' + line
+        file_line = re.match(r'^\s*File "([\w/\.-]+)", line (\d+),', line)
+        if file_line:
+            return '    %s:%s' % (file_line.group(1), file_line.group(2))
+        elif re.match(r'^Traceback', line):
+            return ''
+        elif re.match(r'^  \S', line):
+            return self.COLOR_BLUE + line + self.COLOR_END
+        else:
+            return line
+
+    def _format_traceback(self, traceback):
+        if self.dots:
+            traceback = traceback.split("\n")[1:]
+            traceback = map(self._format_traceback_line, traceback)
+            traceback = "\n".join(traceback)
+
+        return traceback
+
     def printErrorList(self, flavour, errors):
         for test, err in errors:
             self.stream.writeln(self.separator1)
-            self.stream.writeln("%s: %s" % (flavour,self.getDescription(test)))
-            self.stream.writeln(self.separator2)
-            self.stream.writeln("%s" % err)
+            self.stream.writeln()
+            place = '"%s" [%s]' % (self.getDescription(test), self.getGroupDescription(test))
+            self.stream.write(self.COLOR_RED)
+            self.stream.writeln("%s: %s" % (flavour, place))
+            self.stream.write(self.COLOR_END)
+            self.stream.writeln()
+            self.stream.writeln("%s" % self._format_traceback(err))
 
 
 class TextTestRunner(unittest.TextTestRunner):
@@ -165,4 +185,4 @@ main = TestProgram
 
 if __name__ == '__main__':
     loader = TestLoader()
-    main(verbosity=2, testLoader=loader, testRunner=TextTestRunner)
+    main(testLoader=loader, testRunner=TextTestRunner)
