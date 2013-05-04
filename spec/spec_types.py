@@ -1,42 +1,38 @@
 import mock
-import flowp.typess
+from flowp import typess as ftypes
 from flowp.testing import Behavior
 
 
-class SomeTest(Behavior):
-    def it_do_something(self):
-        pass
-
-
 class Should(Behavior):
-    class Int(int):
-        pass
-
-    class Bool(object):
-        def __init__(self, value):
-            self.value = value
-
-        def __bool__(self):
-            return self.value
-
-    class List(list):
-        pass
-
-    class NoneType(object):
-        def __init__(self):
-            self.value = None
-
     def before_each(self):
-        self.int = self.Int(1)
-        self.int.should = flowp.typess.Should(self.int)
-        self.true = self.Bool(True)
-        self.true.should = flowp.typess.Should(self.true)
-        self.false = self.Bool(False)
-        self.false.should = flowp.typess.Should(self.false)
-        self.list = self.List([1, 2, 3])
-        self.list.should = flowp.typess.Should(self.list)
-        self.none = self.NoneType()
-        self.none.should = flowp.typess.Should(self.none)
+        class Int(int):
+            pass
+
+        class Bool(object):
+            def __init__(self, value):
+                self.value = value
+
+            def __bool__(self):
+                return self.value
+
+        class List(list):
+            pass
+
+        class NoneType(object):
+            def __init__(self):
+                self.value = None
+
+        self.Int = Int
+        self.int = Int(1)
+        self.int.should = ftypes.Should(self.int)
+        self.true = Bool(True)
+        self.true.should = ftypes.Should(self.true)
+        self.false = Bool(False)
+        self.false.should = ftypes.Should(self.false)
+        self.list = List([1, 2, 3])
+        self.list.should = ftypes.Should(self.list)
+        self.none = NoneType()
+        self.none.should = ftypes.Should(self.none)
 
     def it_do_correct_should_asserts(self):
         self.int.should.be_instanceof(self.Int)
@@ -62,22 +58,22 @@ class Should(Behavior):
 
 
 class Object(Behavior):
-    class SomeClass(flowp.typess.Object):
+    class SomeClass(ftypes.Object):
         x = 1
 
     def before_each(self):
-        self.object = flowp.typess.Object()
+        self.object = ftypes.Object()
 
     def it_have_should_object(self):
-        assert isinstance(self.object.should, flowp.typess.Should)
+        assert isinstance(self.object.should, ftypes.Should)
         assert self.object.should.context is self.object
 
     def it_have_type_property(self):
-        assert self.object.type is flowp.typess.Object
+        assert self.object.type is ftypes.Object
         assert self.object.type is not object
 
     def it_have_is_callable_property(self):
-        class Callable(flowp.typess.Object):
+        class Callable(ftypes.Object):
             def __call__(self):
                 return True
 
@@ -85,7 +81,7 @@ class Object(Behavior):
         assert Callable().is_callable
 
     def it_have_is_instanceof_method(self):
-        assert self.object.is_instanceof(flowp.typess.Object)
+        assert self.object.is_instanceof(ftypes.Object)
 
     def it_have_hasattr_method(self):
         ob = self.SomeClass()
@@ -98,7 +94,7 @@ class Object(Behavior):
 
 
 class Iterable(Behavior):
-    class Tuple(tuple, flowp.typess.Iterable):
+    class Tuple(tuple, ftypes.Iterable):
         pass
 
     def before_each(self):
@@ -119,10 +115,8 @@ class Iterable(Behavior):
         assert self.tuple3.any
         assert not self.tuple4.any
 
-    def it_have_min_property(self):
+    def it_have_min_max_properties(self):
         assert self.tuple1.min == 1
-
-    def it_have_max_property(self):
         assert self.tuple1.max == 3
 
     def it_have_sum_property(self):
@@ -139,7 +133,7 @@ class Iterable(Behavior):
 
 
 class TypesPropagator(Behavior):
-    class SomeClass(flowp.typess.TypesPropagator):
+    class SomeClass(ftypes.TypesPropagator):
         cls_att = 'cls_att'
 
         def __init__(self):
@@ -161,15 +155,15 @@ class TypesPropagator(Behavior):
 
 class ThisMethod(Behavior):
     def it_transforms_builtin_types_to_flowp_types(self):
-        assert isinstance(flowp.typess.this(1), flowp.typess.Int)
-        assert isinstance(flowp.typess.this(1.1), flowp.typess.Float)
-        assert isinstance(flowp.typess.this("abc"), flowp.typess.Str)
-        assert isinstance(flowp.typess.this(True), flowp.typess.BoolProxy)
-        assert isinstance(flowp.typess.this(None), flowp.typess.NoneProxy)
-        assert isinstance(flowp.typess.this([1, 2, 3]), flowp.typess.List)
-        assert isinstance(flowp.typess.this((1, 2, 3)), flowp.typess.Tuple)
-        assert isinstance(flowp.typess.this({'a': 1, 'b': 2}), flowp.typess.Dict)
-        assert isinstance(flowp.typess.this({1, 2, 3}), flowp.typess.Set)
+        assert isinstance(ftypes.this(1), ftypes.Int)
+        assert isinstance(ftypes.this(1.1), ftypes.Float)
+        assert isinstance(ftypes.this("abc"), ftypes.Str)
+        assert isinstance(ftypes.this(True), ftypes.BoolProxy)
+        assert isinstance(ftypes.this(None), ftypes.NoneProxy)
+        assert isinstance(ftypes.this([1, 2, 3]), ftypes.List)
+        assert isinstance(ftypes.this((1, 2, 3)), ftypes.Tuple)
+        assert isinstance(ftypes.this({'a': 1, 'b': 2}), ftypes.Dict)
+        assert isinstance(ftypes.this({1, 2, 3}), ftypes.Set)
 
     def it_transform_function_types_to_flowp_function_types(self):
         class SomeClass:
@@ -180,9 +174,9 @@ class ThisMethod(Behavior):
             return 2
 
         obj = SomeClass()
-        assert isinstance(flowp.typess.this(function), flowp.typess.FunctionProxy)
-        assert isinstance(flowp.typess.this(obj.method), flowp.typess.FunctionProxy)
-        assert isinstance(flowp.typess.this("abc".index), flowp.typess.FunctionProxy)
+        assert isinstance(ftypes.this(function), ftypes.FunctionProxy)
+        assert isinstance(ftypes.this(obj.method), ftypes.FunctionProxy)
+        assert isinstance(ftypes.this("abc".index), ftypes.FunctionProxy)
 
     def it_add_flowp_object_class_as_mixin_if_not_builtin_type(self):
         class SomeClass:
@@ -190,8 +184,8 @@ class ThisMethod(Behavior):
 
         obj = SomeClass()
         obj.a = 111
-        assert isinstance(flowp.typess.this(obj), flowp.typess.Object)
-        assert isinstance(flowp.typess.this(obj), SomeClass)
+        assert isinstance(ftypes.this(obj), ftypes.Object)
+        assert isinstance(ftypes.this(obj), SomeClass)
         assert obj.a == 111
         assert hasattr(obj, 'should')
 
@@ -199,7 +193,7 @@ class ThisMethod(Behavior):
 class ObjectProxy(Behavior):
     def before_each(self):
         self.subject = "abc"
-        self.obj = flowp.typess.ObjectProxy(self.subject)
+        self.obj = ftypes.ObjectProxy(self.subject)
 
     def it_stores_subject_at_subject_attribute(self):
         assert self.obj.subject is self.subject
@@ -213,7 +207,7 @@ class ObjectProxy(Behavior):
             def prop(self):
                 return 1
 
-        obj = flowp.typess.ObjectProxy(SomeClass())
+        obj = ftypes.ObjectProxy(SomeClass())
         assert obj.prop == 1
 
 
@@ -224,7 +218,7 @@ class FunctionProxy(Behavior):
             return x
 
         func.someatt = 1
-        self.fproxy = flowp.typess.FunctionProxy(func)
+        self.fproxy = ftypes.FunctionProxy(func)
 
     def it_is_callable(self):
         assert self.fproxy(1) == 1
