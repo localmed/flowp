@@ -36,12 +36,12 @@ class Should(object):
 
     @property
     def be_true(self):
-        assert bool(self.context) is True
+        assert self.context.subject is True
         return None
 
     @property
     def be_false(self):
-        assert bool(self.context) is False
+        assert self.context.subject is False
         return None
 
     @property
@@ -169,12 +169,12 @@ class Dict(dict):
     pass
 
 
-class TypesPropagator:
+class TypesPropagator(object):
     def __getattribute__(self, item):
         return this(object.__getattribute__(self, item))
 
 
-class ObjectProxy:
+class ObjectProxy(object):
     def __init__(self, subject):
         self.subject = subject
 

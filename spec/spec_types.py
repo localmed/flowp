@@ -9,11 +9,11 @@ class Should(Behavior):
             pass
 
         class Bool(object):
-            def __init__(self, value):
-                self.value = value
+            def __init__(self, subject):
+                self.subject = subject
 
             def __bool__(self):
-                return self.value
+                return self.subject
 
         class List(list):
             pass
@@ -23,6 +23,7 @@ class Should(Behavior):
                 self.value = None
 
         self.Int = Int
+        self.Bool = Bool
         self.int = Int(1)
         self.int.should = ftypes.Should(self.int)
         self.true = Bool(True)
@@ -166,7 +167,7 @@ class ThisMethod(Behavior):
         assert isinstance(ftypes.this({1, 2, 3}), ftypes.Set)
 
     def it_transform_function_types_to_flowp_function_types(self):
-        class SomeClass:
+        class SomeClass(object):
             def method(self):
                 return 1
 
@@ -179,7 +180,7 @@ class ThisMethod(Behavior):
         assert isinstance(ftypes.this("abc".index), ftypes.FunctionProxy)
 
     def it_add_flowp_object_class_as_mixin_if_not_builtin_type(self):
-        class SomeClass:
+        class SomeClass(object):
             pass
 
         obj = SomeClass()
