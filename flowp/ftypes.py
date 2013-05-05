@@ -15,7 +15,7 @@ class ShouldThrow(object):
         try:
             self.should_obj.context(*args, **kwargs)
             assert False, "%s exception should be raised" % \
-                self.expected_exception_class
+                self.expected_exception_class.__name__
         except self.expected_exception_class:
             pass 
 
@@ -82,6 +82,11 @@ class Should(object):
         assert isinstance(self.context, other) is False
 
 
+class TypesPropagator(object):
+    def __getattribute__(self, item):
+        return this(object.__getattribute__(self, item))
+
+
 class Object(object):
     Should = Should
 
@@ -145,7 +150,11 @@ class Iterable(Object):
 
 
 class List(list, Iterable):
-    pass
+    @property
+    def reversed(self):
+        lst = self[:]
+        lst.reverse()
+        return lst
 
 
 class Tuple(tuple, Iterable):
@@ -190,12 +199,6 @@ class Complex(complex, Object):
 
 class Dict(dict):
     pass
-
-
-class TypesPropagator(object):
-    def __getattribute__(self, item):
-        return this(object.__getattribute__(self, item))
-
 
 class ObjectProxy(object):
     def __init__(self, subject):

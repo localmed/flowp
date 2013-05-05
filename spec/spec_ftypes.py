@@ -58,11 +58,21 @@ class Should(Behavior):
             self.int.should == 2
 
     def it_do_should_raise_assert(self):
+        class TestException(Exception):
+            pass
+
         def func():
-            raise Exception()
+            raise TestException()
+
+        def func2():
+            pass
 
         func.should = ftypes.Should(func) 
-        func.should.throw(Exception).by_call()
+        func.should.throw(TestException).by_call()
+
+        with self.assertRaisesRegexp(AssertionError, r'^TestException'):
+            func2.should = ftypes.Should(func2)
+            func2.should.throw(TestException).by_call()
 
 
 class Object(Behavior):
@@ -237,3 +247,25 @@ class FunctionProxy(Behavior):
 
     def it_lookup_to_function_attributes(self):
         assert self.fproxy.someatt == 1
+
+
+class FtypesIntegration(Behavior):
+    def before_each(self):
+        self.s = 'abc-def-ghi'
+        self.l = ['a', 'b', 'c', 'd', 'e']
+        self.nl = [1, 2, [3, 4], 5]
+
+    def it_invokes_types_method_through_this_wrapper(self):
+        assert ftypes.this(self.s).is_instanceof(ftypes.Str)
+        assert ftypes.this(self.l).hasattr('index')
+
+    def it_do_methods_chain_operations(self):
+        s = ftypes.Str(self.s)
+        l = ftypes.List(self.l)
+        nl = ftypes.List(self.nl)
+        l2 = ftypes.List(['1', '2', '1', '1', '3', '2', '4'])
+
+        assert s.split('-').reversed.join('.') == 'ghi.def.abc'
+        assert l.filter(lambda x: x != 'c') == ['a', 'b', 'd', 'e']
+        assert l2.set.map(lambda x: x.int) == ftypes.Set([1, 2, 3, 4])
+        assert nl.flatten.max.str == '5'
