@@ -2,13 +2,34 @@ import functools
 import types
 
 
+class ShouldThrow(object):
+    def __init__(self, should_obj):
+        self.should_obj = should_obj
+        self.exception_class = None
+
+    def __call__(self, expected_exception_class):
+        self.expected_exception_class = expected_exception_class
+        return self
+
+    def by_call(self, *args, **kwargs):
+        try:
+            self.should_obj.context(*args, **kwargs)
+            assert False, "%s exception should be raised" % \
+                self.expected_exception_class
+        except self.expected_exception_class:
+            pass 
+
+
 class Should(object):
+    Throw = ShouldThrow
+
     def __init__(self, context):
         """
         Construct Should object
         @param context: context of Should object
         """
         self.context = context
+        self.throw = self.Throw(self)
 
     def __eq__(self, other):
         assert self.context == other

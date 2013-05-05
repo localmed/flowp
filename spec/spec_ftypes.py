@@ -57,6 +57,13 @@ class Should(Behavior):
         with self.assertRaises(AssertionError):
             self.int.should == 2
 
+    def it_do_should_raise_assert(self):
+        def func():
+            raise Exception()
+
+        func.should = ftypes.Should(func) 
+        func.should.throw(Exception).by_call()
+
 
 class Object(Behavior):
     class SomeClass(ftypes.Object):
