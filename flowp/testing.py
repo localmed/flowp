@@ -1,5 +1,7 @@
 import unittest
 import re
+import contextlib
+import inspect
 
 
 class BDDTestCase(type):
@@ -15,6 +17,43 @@ class BDDTestCase(type):
             new_namespace[key] = value
 
         return type.__new__(cls, name, bases, new_namespace)
+
+def when(*context_methods):
+    """Context wrapper for Behavior class """
+    def get_new_test_method(test_method, context_method):
+        isgeneratorfunction = inspect.isgeneratorfunction(context_method)
+        if isgeneratorfunction:
+            context_method = contextlib.contextmanager(context_method)
+        
+        def new_test_method(self, *args, **kwargs):
+            if isgeneratorfunction:
+                with context_method(self):
+                    return test_method(self, *args, **kwargs)
+            elif not isinstance(context_method, str):
+                context_method(self)
+                return test_method(self, *args, **kwargs) 
+
+        return new_test_method 
+
+    def get_context_name(context):
+        """ Get the context name from a context object.
+        :param context: can be function or string
+        """ 
+        if isinstance(context, str):
+            name = context
+        else:
+            name = context.__name__
+
+        return name.replace('_', ' ')
+
+    def func_consumer(test_method):
+        for context_method in context_methods:
+            test_method = get_new_test_method(test_method, context_method) 
+
+        test_method.contexts = map(get_context_name, context_methods) 
+        return test_method
+
+    return func_consumer
 
 
 class Behavior(unittest.TestCase):
@@ -42,7 +81,6 @@ class TestLoader(unittest.TestLoader):
 class TextTestResult(unittest.TestResult):
     separator1 = '-' * 70
     separator2 = '-' * 70
-    groups = set()
     COLOR_GREEN = '\033[92m'
     COLOR_RED = '\033[91m'
     COLOR_END = '\033[0m'
@@ -54,6 +92,8 @@ class TextTestResult(unittest.TestResult):
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
+        self.groups = set()
+        self.context_groups = set()
 
 
     def getGroupDescription(self, test):
@@ -76,6 +116,14 @@ class TextTestResult(unittest.TestResult):
             if group not in self.groups:
                 self.stream.writeln("\n%s:" % group)
                 self.groups.add(group)
+
+            # Creating, printing contexts groups (unfinished, doesn't print good) 
+            #test_method = getattr(test, test._testMethodName) 
+            #if hasattr(test_method, 'contexts'):
+            #    for context in test_method.contexts:
+            #        if context not in self.context_groups:
+            #            self.stream.writeln("\n  %s:" % context)
+            #            self.context_groups.add(context)    
 
             self.stream.flush()
 

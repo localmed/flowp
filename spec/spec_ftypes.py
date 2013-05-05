@@ -92,6 +92,9 @@ class Object(Behavior):
     def it_have_getattr_method(self):
         ob = self.SomeClass()
         assert ob.getattr('x') == 1
+    
+    def it_have_default_should_class_as_attribute(self):
+        assert issubclass(self.object.Should, ftypes.Should)
 
 
 class Iterable(Behavior):
@@ -203,7 +206,7 @@ class ObjectProxy(Behavior):
         assert self.obj.index("c") == 2
 
     def it_pass_lookup_to_subject_property_attributes(self):
-        class SomeClass:
+        class SomeClass(object):
             @property
             def prop(self):
                 return 1

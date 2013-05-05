@@ -62,10 +62,12 @@ class Should(object):
 
 
 class Object(object):
+    Should = Should
+
     @property
     def should(self):
         if not hasattr(self, '_should'):
-            self._should = Should(self)
+            self._should = self.Should(self)
         return self._should
 
     @property
