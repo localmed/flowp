@@ -7,7 +7,7 @@ import sys
 
 
 class BDDTestCase(type):
-    def __new__(cls, name, bases, namespace, **kwargs):
+    def __new__(cls, name, bases, namespace):
         new_namespace = {}
         for key, value in namespace.items():
             if key == 'before_each':
@@ -19,6 +19,16 @@ class BDDTestCase(type):
             new_namespace[key] = value
 
         return type.__new__(cls, name, bases, new_namespace)
+
+
+# Compatible way of using metaclass through python 2 and 3
+# Same as: (in python 2)
+# class Behavior(unittest.TestCase):
+#     __metaclass__ = BDDTestCase
+# 
+# Creates basic class for testing. New style of unittest.TestCase
+Behavior = BDDTestCase('Behavior', (unittest.TestCase,), {})
+
 
 def when(*context_methods):
     """Context wrapper for Behavior class """
@@ -56,11 +66,6 @@ def when(*context_methods):
         return test_method
 
     return func_consumer
-
-
-class Behavior(unittest.TestCase):
-    __metaclass__ = BDDTestCase
-
 
 class TestProgram(unittest.TestProgram):
     def _do_discovery(self, argv, Loader = None):
