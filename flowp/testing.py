@@ -1,7 +1,9 @@
 import unittest
+import unittest.main
 import re
 import contextlib
 import inspect
+import sys
 
 
 class BDDTestCase(type):
@@ -232,5 +234,6 @@ class TextTestRunner(unittest.TextTestRunner):
 main = TestProgram
 
 if __name__ == '__main__':
+    sys.argv[0] = "python -m flowp.testing"
     loader = TestLoader()
-    main(testLoader=loader, testRunner=TextTestRunner)
+    main(module=None, testLoader=loader, testRunner=TextTestRunner)
