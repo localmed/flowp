@@ -216,37 +216,59 @@ class BoolProxy(ObjectProxy):
 class NoneProxy(ObjectProxy):
     pass
 
+class TypeProxy(type):
+    pass
 
 class FunctionProxy(ObjectProxy):
     def __call__(self, *args, **kwargs):
         return self.subject(*args, **kwargs)
 
 
-def this(obj):
-    types_map = {
-        int: Int,
-        float: Float,
-        str: Str,
-        bool: BoolProxy,
-        type(None): NoneProxy,
-        list: List,
-        tuple: Tuple,
-        dict: Dict,
-        set: Set,
-        types.MethodType: FunctionProxy,
-        types.BuiltinMethodType: FunctionProxy,
-        types.FunctionType: FunctionProxy,
-        types.BuiltinFunctionType: FunctionProxy,
-        types.LambdaType: FunctionProxy,
-    }
+TYPES_MAP = {
+    int: Int,
+    float: Float,
+    str: Str,
+    bool: BoolProxy,
+    type(None): NoneProxy,
+    list: List,
+    tuple: Tuple,
+    dict: Dict,
+    set: Set,
+    types.MethodType: FunctionProxy,
+    types.BuiltinMethodType: FunctionProxy,
+    types.FunctionType: FunctionProxy,
+    types.BuiltinFunctionType: FunctionProxy,
+    types.LambdaType: FunctionProxy,
+}
 
+
+def this(obj):
+    """Convert object to the object with type which is consistent with flowp 
+    types.
+    Examples:
+
+        class SomeClass(object):
+            pass
+        some_obj = SomeClass()
+
+        this([1,2,3]) is ftypes.List([1,2,3])
+        this(1) is ftypes.Int(1)
+        this(some_obj).is_instanceof(ftypes.Object)
+    """
     obj_type = type(obj)
-    if obj_type in types_map.keys():
-        new_type = types_map[obj_type]
+
+    # Converting basic built-in types (from TYPES_MAP), easy convert
+    if obj_type in TYPES_MAP.keys():
+        new_type = TYPES_MAP[obj_type]
         return new_type(obj)
 
+    # Handling 'type' type (basic type of classes), special convert
+    if obj_type is type:
+        obj.__class__ = TypeProxy 
+        return obj
+
     # if not built-in type, inject Object class inheritance to object copy
-    obj_class_name = obj_type.__name__
-    newclass = type(obj_class_name, (obj_type, Object), dict())
-    obj.__class__ = newclass
+    # CAN BE UNSAFE TRICK!
+    new_class = type(obj_type.__name__, (obj_type, Object), dict())
+    obj.__class__ = new_class
     return obj

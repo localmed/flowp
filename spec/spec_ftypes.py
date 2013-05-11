@@ -176,6 +176,9 @@ class TypesPropagator(Behavior):
 
 class ThisMethod(Behavior):
     def it_transforms_builtin_types_to_flowp_types(self):
+        class SomeClass(object):
+            pass
+
         assert isinstance(ftypes.this(1), ftypes.Int)
         assert isinstance(ftypes.this(1.1), ftypes.Float)
         assert isinstance(ftypes.this("abc"), ftypes.Str)
@@ -185,6 +188,7 @@ class ThisMethod(Behavior):
         assert isinstance(ftypes.this((1, 2, 3)), ftypes.Tuple)
         assert isinstance(ftypes.this({'a': 1, 'b': 2}), ftypes.Dict)
         assert isinstance(ftypes.this({1, 2, 3}), ftypes.Set)
+        assert isinstance(ftypes.this(SomeClass), ftypes.TypeProxy)
 
     def it_transform_function_types_to_flowp_function_types(self):
         class SomeClass(object):
@@ -210,6 +214,24 @@ class ThisMethod(Behavior):
         assert obj.a == 111
         assert hasattr(obj, 'should')
 
+    @mock.patch('flowp.ftypes.Str')
+    def it_not_transform_if_its_already_ftype(self, Str_mock):
+        obj = ftypes.Str("abc") 
+        ftypes.this(obj)
+        assert not Str_mock.called
+
+    def it_leaves_class_and_object_attributes(self):
+        class SomeClass(object):
+            a = 1
+            
+            def __init__(self):
+                self.b = 2
+
+        obj = SomeClass()
+        new_obj = ftypes.this(obj)
+        assert new_obj.a == 1
+        assert new_obj.b == 2
+
 
 class ObjectProxy(Behavior):
     def before_each(self):
@@ -232,6 +254,20 @@ class ObjectProxy(Behavior):
         assert obj.prop == 1
 
 
+class BoolProxy(Behavior):
+    def before_each(self):
+        self.T = ftypes.BoolProxy(True)
+        self.F = ftypes.BoolProxy(False)
+
+    def it_simulate_conditional_checking(self):
+        """Fails on python 2, pass on python 3, becouse of __bool__ method.
+        Hard to resolve.
+        """
+        if not self.T:
+            raise AssertionError 
+
+        if self.F:
+            raise AssertionError
 
 class FunctionProxy(Behavior):
     def before_each(self):
