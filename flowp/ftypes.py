@@ -2,6 +2,40 @@ import functools
 import types
 
 
+################# CORE #################
+
+def this(obj):
+    """Convert object to the object with type which is consistent with flowp 
+    types.
+    Examples:
+
+        class SomeClass(object):
+            pass
+        some_obj = SomeClass()
+
+        this([1,2,3]) is ftypes.List([1,2,3])
+        this(1) is ftypes.Int(1)
+        this(some_obj).is_instanceof(ftypes.Object)
+    """
+    obj_type = type(obj)
+
+    # Converting basic built-in types (from TYPES_MAP), easy convert
+    if obj_type in TYPES_MAP.keys():
+        new_type = TYPES_MAP[obj_type]
+        return new_type(obj)
+
+    # Handling 'type' type (basic type of classes), special convert
+    if obj_type is type:
+        obj.__class__ = TypeProxy 
+        return obj
+
+    # if not built-in type, inject Object class inheritance to object copy
+    # CAN BE UNSAFE TRICK!
+    new_class = type(obj_type.__name__, (obj_type, Object), dict())
+    obj.__class__ = new_class
+    return obj
+
+
 class ShouldThrow(object):
     def __init__(self, should_obj):
         self.should_obj = should_obj
@@ -114,6 +148,35 @@ class Object(object):
         return getattr(self, name)
 
 
+############### ADAPTERS ###############
+
+class ObjectProxy(object):
+    def __init__(self, subject):
+        self.subject = subject
+
+    def __getattr__(self, item):
+        return getattr(self.subject, item)
+
+
+class BoolProxy(ObjectProxy):
+    def __bool__(self):
+        return self.subject
+
+
+class NoneProxy(ObjectProxy):
+    pass
+
+class TypeProxy(type):
+    pass
+
+class FunctionProxy(ObjectProxy):
+    def __call__(self, *args, **kwargs):
+        return self.subject(*args, **kwargs)
+
+
+
+############## CONVERTERS ##############
+
 class Iterable(Object):
     @property
     def len(self):
@@ -200,29 +263,6 @@ class Complex(complex, Object):
 class Dict(dict):
     pass
 
-class ObjectProxy(object):
-    def __init__(self, subject):
-        self.subject = subject
-
-    def __getattr__(self, item):
-        return getattr(self.subject, item)
-
-
-class BoolProxy(ObjectProxy):
-    def __bool__(self):
-        return self.subject
-
-
-class NoneProxy(ObjectProxy):
-    pass
-
-class TypeProxy(type):
-    pass
-
-class FunctionProxy(ObjectProxy):
-    def __call__(self, *args, **kwargs):
-        return self.subject(*args, **kwargs)
-
 
 TYPES_MAP = {
     int: Int,
@@ -241,34 +281,3 @@ TYPES_MAP = {
     types.LambdaType: FunctionProxy,
 }
 
-
-def this(obj):
-    """Convert object to the object with type which is consistent with flowp 
-    types.
-    Examples:
-
-        class SomeClass(object):
-            pass
-        some_obj = SomeClass()
-
-        this([1,2,3]) is ftypes.List([1,2,3])
-        this(1) is ftypes.Int(1)
-        this(some_obj).is_instanceof(ftypes.Object)
-    """
-    obj_type = type(obj)
-
-    # Converting basic built-in types (from TYPES_MAP), easy convert
-    if obj_type in TYPES_MAP.keys():
-        new_type = TYPES_MAP[obj_type]
-        return new_type(obj)
-
-    # Handling 'type' type (basic type of classes), special convert
-    if obj_type is type:
-        obj.__class__ = TypeProxy 
-        return obj
-
-    # if not built-in type, inject Object class inheritance to object copy
-    # CAN BE UNSAFE TRICK!
-    new_class = type(obj_type.__name__, (obj_type, Object), dict())
-    obj.__class__ = new_class
-    return obj
