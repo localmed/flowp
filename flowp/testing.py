@@ -204,7 +204,7 @@ class TextTestResult(unittest.TestResult):
         line = '  ' + line
         file_line = re.match(r'^\s*File "([\w/\.-]+)", line (\d+),', line)
         if file_line:
-            return '    %s:%s' % (file_line.group(1), file_line.group(2))
+            return '  File "%s":%s' % (file_line.group(1), file_line.group(2))
         elif re.match(r'^Traceback', line):
             return ''
         elif re.match(r'^  \S', line):
@@ -213,11 +213,9 @@ class TextTestResult(unittest.TestResult):
             return line
 
     def _format_traceback(self, traceback):
-        if self.dots:
-            traceback = traceback.split("\n")[1:]
-            traceback = map(self._format_traceback_line, traceback)
-            traceback = "\n".join(traceback)
-
+        traceback = traceback.split("\n")[1:]
+        traceback = map(self._format_traceback_line, traceback)
+        traceback = "\n".join(traceback)
         return traceback
 
     def printErrorList(self, flavour, errors):
