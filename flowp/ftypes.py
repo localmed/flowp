@@ -15,26 +15,17 @@ def this(obj):
 
         this([1,2,3]) is ftypes.List([1,2,3])
         this(1) is ftypes.Int(1)
-        this(some_obj).is_instanceof(ftypes.Object)
+        this(some_obj).__class__ is ObjectAdapter
     """
     obj_type = type(obj)
 
-    # Converting basic built-in types (from TYPES_MAP), easy convert
+    # If built-in type convert from TYPES_MAP
     if obj_type in TYPES_MAP.keys():
         new_type = TYPES_MAP[obj_type]
         return new_type(obj)
 
-    # Handling 'type' type (basic type of classes), special convert
-    if obj_type is type:
-        obj.__class__ = TypeProxy 
-        return obj
-
-    # if not built-in type, inject Object class inheritance to object copy
-    # CAN BE UNSAFE TRICK!
-    new_class = type(obj_type.__name__, (obj_type, Object), dict())
-    obj.__class__ = new_class
-    return obj
-
+    # If not built-in type, return ObjectAdapter with given obj as adaptee
+    return ObjectAdapter(obj)
 
 class ShouldThrow(object):
     def __init__(self, should_obj):
@@ -121,6 +112,9 @@ class TypesPropagator(object):
         return this(object.__getattribute__(self, item))
 
 
+class Type(type):
+    pass
+
 class Object(object):
     Should = Should
 
@@ -150,29 +144,63 @@ class Object(object):
 
 ############### ADAPTERS ###############
 
-class ObjectProxy(object):
-    def __init__(self, subject):
-        self.subject = subject
+class ObjectAdapter(Object):
+    def __init__(self, adaptee):
+        self._adaptee = adaptee
 
-    def __getattr__(self, item):
-        return getattr(self.subject, item)
+    def __getattr__(self, name):
+        return getattr(self._adaptee, name)
+
+    def __repr__(self):
+        return self._adaptee.__repr__()
+
+    def __dir__(self):
+        atts = [a for a in dir(self._adaptee) if not a.startswith('__')]
+        atts.extend(self.__dict__.keys())
+        atts.extend(type(self).__dict__.keys())
+        atts.extend(object.__dict__.keys())
+        atts = list(set(atts))
+        return atts
+
+    @property
+    def should(self):
+        if not hasattr(self, '_should'):
+            self._should = self.Should(self._adaptee)
+        return self._should
+
+    @property
+    def type(self):
+        return type(self._adaptee)
+
+    @property
+    def is_callable(self):
+        return callable(self._adaptee)
+
+    def is_instanceof(self, klass):
+        return isinstance(self._adaptee, klass) 
+
+    def hasattr(self, name):
+        return hasattr(self._adaptee, name)
+
+    def getattr(self, name):
+        return getattr(self._adaptee, name)
 
 
-class BoolProxy(ObjectProxy):
-    def __bool__(self):
-        return self.subject
-
-
-class NoneProxy(ObjectProxy):
+class BoolAdapter(ObjectAdapter, int):
     pass
 
-class TypeProxy(type):
+
+class NoneAdapter(ObjectAdapter):
     pass
 
-class FunctionProxy(ObjectProxy):
+
+class FunctionAdapter(ObjectAdapter):
     def __call__(self, *args, **kwargs):
-        return self.subject(*args, **kwargs)
+        return self._adaptee(*args, **kwargs)
 
+
+class TypeAdapter(ObjectAdapter):
+    pass
 
 
 ############## CONVERTERS ##############
@@ -268,16 +296,17 @@ TYPES_MAP = {
     int: Int,
     float: Float,
     str: Str,
-    bool: BoolProxy,
-    type(None): NoneProxy,
+    bool: BoolAdapter,
+    type(None): NoneAdapter,
     list: List,
     tuple: Tuple,
     dict: Dict,
     set: Set,
-    types.MethodType: FunctionProxy,
-    types.BuiltinMethodType: FunctionProxy,
-    types.FunctionType: FunctionProxy,
-    types.BuiltinFunctionType: FunctionProxy,
-    types.LambdaType: FunctionProxy,
+    type: TypeAdapter,
+    types.MethodType: FunctionAdapter,
+    types.BuiltinMethodType: FunctionAdapter,
+    types.FunctionType: FunctionAdapter,
+    types.BuiltinFunctionType: FunctionAdapter,
+    types.LambdaType: FunctionAdapter,
 }
 

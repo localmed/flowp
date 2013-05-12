@@ -1,6 +1,7 @@
 import mock
 from flowp import ftypes
 from flowp.testing import Behavior
+import types
 
 
 ################# CORE #################
@@ -145,13 +146,13 @@ class ThisMethod(Behavior):
         assert isinstance(ftypes.this(1), ftypes.Int)
         assert isinstance(ftypes.this(1.1), ftypes.Float)
         assert isinstance(ftypes.this("abc"), ftypes.Str)
-        assert isinstance(ftypes.this(True), ftypes.BoolProxy)
-        assert isinstance(ftypes.this(None), ftypes.NoneProxy)
+        assert isinstance(ftypes.this(True), ftypes.BoolAdapter)
+        assert isinstance(ftypes.this(None), ftypes.NoneAdapter)
         assert isinstance(ftypes.this([1, 2, 3]), ftypes.List)
         assert isinstance(ftypes.this((1, 2, 3)), ftypes.Tuple)
         assert isinstance(ftypes.this({'a': 1, 'b': 2}), ftypes.Dict)
         assert isinstance(ftypes.this({1, 2, 3}), ftypes.Set)
-        assert isinstance(ftypes.this(SomeClass), ftypes.TypeProxy)
+        assert isinstance(ftypes.this(SomeClass), ftypes.TypeAdapter)
 
     def it_transform_function_types_to_flowp_function_types(self):
         class SomeClass(object):
@@ -162,25 +163,26 @@ class ThisMethod(Behavior):
             return 2
 
         obj = SomeClass()
-        assert isinstance(ftypes.this(function), ftypes.FunctionProxy)
-        assert isinstance(ftypes.this(obj.method), ftypes.FunctionProxy)
-        assert isinstance(ftypes.this("abc".index), ftypes.FunctionProxy)
+        assert isinstance(ftypes.this(function), ftypes.FunctionAdapter)
+        assert isinstance(ftypes.this(obj.method), ftypes.FunctionAdapter)
+        assert isinstance(ftypes.this("abc".index), ftypes.FunctionAdapter)
 
-    def it_add_flowp_object_class_as_mixin_if_not_builtin_type(self):
+    def it_return_object_adapter_if_not_builtin_type(self):
         class SomeClass(object):
             pass
 
         obj = SomeClass()
         obj.a = 111
-        assert isinstance(ftypes.this(obj), ftypes.Object)
-        assert isinstance(ftypes.this(obj), SomeClass)
-        assert obj.a == 111
-        assert hasattr(obj, 'should')
+        new_obj = ftypes.this(obj)
+        assert new_obj.__class__ is ftypes.ObjectAdapter
+        assert new_obj._adaptee is obj
+        assert new_obj.a == 111
 
-    @mock.patch('flowp.ftypes.Str')
-    def it_not_transform_if_its_already_ftype(self, Str_mock):
-        obj = ftypes.Str("abc") 
-        ftypes.this(obj)
+    def it_not_transform_if_its_already_ftype(self):
+        Str_mock = mock.MagicMock()
+        obj = ftypes.Str('abc')
+        with mock.patch.dict('flowp.ftypes.TYPES_MAP', {str:Str_mock}):
+            ftypes.this(obj)
         assert not Str_mock.called
 
     def it_leaves_class_and_object_attributes(self):
@@ -198,49 +200,96 @@ class ThisMethod(Behavior):
 
 ############### ADAPTERS ###############
 
-class ObjectProxy(Behavior):
+class ObjectAdapter(Behavior):
     def before_each(self):
-        self.subject = "abc"
-        self.obj = ftypes.ObjectProxy(self.subject)
+        self.adaptee = "abc"
+        self.adapter = ftypes.ObjectAdapter(self.adaptee)
+    
+    def class_attributes(self, klass, att_type):
+        def _(att_name):
+            att = getattr(klass, att_name)
+            if not att_name.startswith('_') and isinstance(att, att_type):
+                return True
+            return False
+        return filter(_, klass.__dict__.keys())
 
-    def it_stores_subject_at_subject_attribute(self):
-        assert self.obj.subject is self.subject
+    def it_inherits_from_flowp_core_Object(self):
+        assert issubclass(ftypes.ObjectAdapter, ftypes.Object)
 
-    def it_pass_lookup_to_subject_attributes(self):
-        assert self.obj.index("c") == 2
+    def it_stores_adaptee_object(self):
+        assert self.adapter._adaptee is self.adaptee
 
-    def it_pass_lookup_to_subject_property_attributes(self):
+    def it_pass_attribute_lookup_to_adaptee_attributes(self):
+        assert self.adapter.index("c") == 2
+
+    def it_pass_property_lookup_to_adaptee(self):
         class SomeClass(object):
             @property
             def prop(self):
                 return 1
 
-        obj = ftypes.ObjectProxy(SomeClass())
+        obj = ftypes.ObjectAdapter(SomeClass())
         assert obj.prop == 1
 
+    def it_execute_adapter_methods_with_adaptee_context(self):
+        assert self.adapter.is_instanceof(str)
+        assert self.adapter.hasattr('upper')
+        assert self.adapter.getattr('upper')
 
-class BoolProxy(Behavior):
+    def it_execute_adapter_properties_with_adaptee_context(self):
+        def func():
+            pass
+        adapter = ftypes.ObjectAdapter(func)
+
+        assert adapter.is_instanceof(types.FunctionType)
+        assert adapter.is_callable
+        assert not self.adapter.is_callable
+        assert self.adapter.type is str
+
+    def it_have_Should_object_with_adaptee_context(self):
+        assert self.adapter.should.context is self.adaptee
+
+    def it_show_adapter_and_adaptee_attributes_by_dir_func(self):
+        base_atts = [a for a in dir(self.adaptee) if not a.startswith('__')]
+        adpt_atts = type(self.adapter).__dict__.keys()
+        adpt_atts.extend(self.adapter.__dict__.keys()) 
+        adpt_atts.extend(object.__dict__.keys())
+        atts = list(set(base_atts + adpt_atts))
+        assert set(dir(self.adapter)) == set(atts)
+
+    def it_have_adaptee_string_representation(self):
+        assert self.adapter.__repr__() == self.adaptee.__repr__()
+
+    def it_overrides_all_properties_and_methods_from_flowp_Object(self):
+        base_atts = self.class_attributes(ftypes.Object, 
+                types.UnboundMethodType) \
+            + self.class_attributes(ftypes.Object, property)
+        adpt_atts = self.class_attributes(ftypes.ObjectAdapter, 
+                types.UnboundMethodType) \
+            + self.class_attributes(ftypes.ObjectAdapter, property)
+        assert set(adpt_atts) >= set(base_atts)
+
+
+class BoolAdapter(Behavior):
     def before_each(self):
-        self.T = ftypes.BoolProxy(True)
-        self.F = ftypes.BoolProxy(False)
+        self.T = ftypes.BoolAdapter(True)
+        self.F = ftypes.BoolAdapter(False)
 
     def it_simulate_conditional_checking(self):
-        """Fails on python 2, pass on python 3, becouse of __bool__ method.
-        Hard to resolve.
-        """
         if not self.T:
             raise AssertionError 
 
         if self.F:
             raise AssertionError
 
-class FunctionProxy(Behavior):
+
+class FunctionAdapter(Behavior):
     def before_each(self):
         def func(x):
             return x
 
         func.someatt = 1
-        self.fproxy = ftypes.FunctionProxy(func)
+        self.fproxy = ftypes.FunctionAdapter(func)
 
     def it_is_callable(self):
         assert self.fproxy(1) == 1
