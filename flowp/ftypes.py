@@ -107,11 +107,6 @@ class Should(object):
         assert isinstance(self.context, other) is False
 
 
-class TypesPropagator(object):
-    def __getattribute__(self, item):
-        return this(object.__getattribute__(self, item))
-
-
 class Type(type):
     pass
 
@@ -196,6 +191,8 @@ class NoneAdapter(ObjectAdapter):
 
 class FunctionAdapter(ObjectAdapter):
     def __call__(self, *args, **kwargs):
+        args = tuple(this(a) for a in args)
+        kwargs = {key: this(value) for key, value in kwargs.items()}
         return self._adaptee(*args, **kwargs)
 
 
@@ -231,13 +228,20 @@ class Iterable(Object):
         return sum(self)
 
     def map(self, func):
-        return map(func, self)
+        return map(FunctionAdapter(func), self)
 
     def filter(self, func):
-        return filter(func, self)
+        return filter(FunctionAdapter(func), self)
 
     def reduce(self, func):
-        return functools.reduce(func, self)
+        return functools.reduce(FunctionAdapter(func), self)
+
+    def join(self, glue):
+        return glue.join(self)
+
+    @property
+    def set(self):
+        return Set(self)
 
 
 class List(list, Iterable):
@@ -245,7 +249,7 @@ class List(list, Iterable):
     def reversed(self):
         lst = self[:]
         lst.reverse()
-        return lst
+        return List(lst)
 
 
 class Tuple(tuple, Iterable):
@@ -253,7 +257,8 @@ class Tuple(tuple, Iterable):
 
 
 class Set(set, Iterable):
-    pass
+    def map(self, func):
+        return Set(super(Set, self).map(func))
 
 
 class Frozenset(frozenset, Iterable):
@@ -272,6 +277,9 @@ class Str(str, Iterable):
     @property
     def int(self):
         return Int(self)
+
+    def split(self, *args, **kwargs):
+        return List(super(Str, self).split(*args, **kwargs))
 
 
 class Int(int, Object):

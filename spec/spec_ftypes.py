@@ -117,27 +117,6 @@ class Object(Behavior):
         assert issubclass(self.object.Should, ftypes.Should)
 
 
-class TypesPropagator(Behavior):
-    class SomeClass(ftypes.TypesPropagator):
-        cls_att = 'cls_att'
-
-        def __init__(self):
-            self.obj_att = 'obj_att'
-
-        def some_method(self):
-            return "abc"
-
-    def before_each(self):
-        self.obj = self.SomeClass()
-
-    @mock.patch('flowp.ftypes.this')
-    def it_pass_every_attribute_lookup_value_through_this_function(self, this_mock):
-        self.obj.cls_att
-        this_mock.assert_called_with('cls_att')
-        self.obj.obj_att
-        this_mock.assert_called_with('obj_att')
-
-
 class ThisMethod(Behavior):
     def it_transforms_builtin_types_to_flowp_types(self):
         class SomeClass(object):
@@ -289,14 +268,22 @@ class FunctionAdapter(Behavior):
             return x
 
         func.someatt = 1
-        self.fproxy = ftypes.FunctionAdapter(func)
+        self.fadapter = ftypes.FunctionAdapter(func)
 
     def it_is_callable(self):
-        assert self.fproxy(1) == 1
-        assert self.fproxy("abc") == "abc"
+        assert self.fadapter(1) == 1
+        assert self.fadapter("abc") == "abc"
 
     def it_lookup_to_function_attributes(self):
-        assert self.fproxy.someatt == 1
+        assert self.fadapter.someatt == 1
+
+    def it_convert_function_arguments_to_flowp_types(self):
+        def func(x, y):
+            assert isinstance(x, ftypes.Str)
+            assert isinstance(y, ftypes.Int)
+
+        fadapter = ftypes.FunctionAdapter(func)
+        fadapter('abc', y=3)
 
 
 ############## CONVERTERS ##############
@@ -346,7 +333,7 @@ class FtypesIntegration(Behavior):
     def before_each(self):
         self.s = 'abc-def-ghi'
         self.l = ['a', 'b', 'c', 'd', 'e']
-        self.nl = [1, 2, [3, 4], 5]
+        self.nl = [1, 2, [3, 4], 5, [1, 2], 3]
 
     def it_invokes_types_method_through_this_wrapper(self):
         assert ftypes.this(self.s).is_instanceof(ftypes.Str)
@@ -361,4 +348,3 @@ class FtypesIntegration(Behavior):
         assert s.split('-').reversed.join('.') == 'ghi.def.abc'
         assert l.filter(lambda x: x != 'c') == ['a', 'b', 'd', 'e']
         assert l2.set.map(lambda x: x.int) == ftypes.Set([1, 2, 3, 4])
-        assert nl.flatten.max.str == '5'
