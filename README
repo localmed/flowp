@@ -1,0 +1,20 @@
+            Flowp
+    ~ More fun with Python ~
+
+
+What is flowp ?
+
+Flowp is a set of handy libraries / modules which should makes working 
+with Python more enjoyable and productive.
+
+For now flowp contains:
+
+    - flowp.ftypes - better data structures / types processing
+    - flowp.testing - better testing framework (BDD, influenced by RSpec)
+
+
+Planned:
+
+    - flowp.system - better files / process manipulation
+    - flowp.build - (fluid) python building system
+    - flowp.dsl - support for macros, very easy dsl (languages) creating
