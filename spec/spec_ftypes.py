@@ -93,16 +93,16 @@ class Object(Behavior):
         assert self.object.type is ftypes.Object
         assert self.object.type is not object
 
-    def it_have_is_callable_property(self):
+    def it_have_iscallable_property(self):
         class Callable(ftypes.Object):
             def __call__(self):
                 return True
 
-        assert not self.object.is_callable
-        assert Callable().is_callable
+        assert not self.object.iscallable
+        assert Callable().iscallable
 
-    def it_have_is_instanceof_method(self):
-        assert self.object.is_instanceof(ftypes.Object)
+    def it_have_isinstance_method(self):
+        assert self.object.isinstance(ftypes.Object)
 
     def it_have_hasattr_method(self):
         ob = self.SomeClass()
@@ -115,6 +115,11 @@ class Object(Behavior):
     
     def it_have_default_should_class_as_attribute(self):
         assert issubclass(self.object.Should, ftypes.Should)
+
+    def it_have_dir_property(self):
+        obj = self.SomeClass()
+        assert obj.dir == dir(obj)
+        assert 'x' in obj.dir
 
 
 class ThisMethod(Behavior):
@@ -211,7 +216,7 @@ class ObjectAdapter(Behavior):
         assert obj.prop == 1
 
     def it_execute_adapter_methods_with_adaptee_context(self):
-        assert self.adapter.is_instanceof(str)
+        assert self.adapter.isinstance(str)
         assert self.adapter.hasattr('upper')
         assert self.adapter.getattr('upper')
 
@@ -220,9 +225,9 @@ class ObjectAdapter(Behavior):
             pass
         adapter = ftypes.ObjectAdapter(func)
 
-        assert adapter.is_instanceof(types.FunctionType)
-        assert adapter.is_callable
-        assert not self.adapter.is_callable
+        assert adapter.isinstance(types.FunctionType)
+        assert adapter.iscallable
+        assert not self.adapter.iscallable
         assert self.adapter.type is str
 
     def it_have_Should_object_with_adaptee_context(self):
@@ -330,6 +335,56 @@ class Iterable(Behavior):
         self.list.filter_it(lambda x: x != 4)
         assert self.list == [2,6]
 
+    def it_do_flatten_operation(self):
+        assert self.List([[1,2],[3,4],[5,6]]).flatten == [1,2,3,4,5,6]
+        assert self.List([1,[2,3],4,[5,6]]).flatten == [1,2,3,4,5,6] 
+        assert self.List([1,[2,[3,4]],5,[6]]).flatten == [1,2,[3,4],5,6]
+        assert self.Tuple(((1,2),(3,4),(5,6))).flatten == (1,2,3,4,5,6)
+        assert self.Tuple((1,(2,3),4,(5,6))).flatten == (1,2,3,4,5,6) 
+        assert self.Tuple((1,(2,(3,4)),5,(6))).flatten == (1,2,(3,4),5,6)
+        # Mixed situations, lists, tuples together
+        assert self.List([1,(2,3),[4,5],6,(7,8),9,[10,11]]).flatten == \
+            [1,2,3,4,5,6,7,8,9,10,11]
+        assert self.Tuple((1,(2,3),[4,5],6,(7,8),9,[10,11])).flatten == \
+            (1,2,3,4,5,6,7,8,9,10,11)
+    
+    def it_do_uniq_operation(self):
+        l = self.List([1,1,2,3,2,4])
+        t = self.Tuple([1,1,2,3,2,4])
+        assert l.uniq == [1,2,3,4]
+        assert t.uniq == (1,2,3,4)
+
+    def it_do_join_operation(self):
+        class Obj(object):
+            def __repr__(self):
+                return 'x'
+ 
+        assert self.List(['a', 'b', 'c']).join('.') == 'a.b.c'
+        # it should join even not str elements
+        assert self.List(['a', 1, 'c']).join('.') == 'a.1.c'
+        assert self.List(['a', Obj(), 'c']).join('.') == 'a.x.c'
+
+    def it_do_replace_operation(self):
+        class Obj(object):
+            pass
+        obj = Obj()
+        t = self.Tuple((1, (1,2), obj))
+        assert self.tuple1.replace(2, 4) == (1,4,3)
+        assert self.Tuple(('a', 'b')).replace('b', 'c') == ('a', 'c')
+        assert t.replace((1,2), 'x') == (1, 'x', obj)
+        assert t.replace(obj, 3) == (1, (1,2), 3)
+
+    def it_do_grep_operation(self):
+        class Ob(object):
+            pass
+        t = self.Tuple((1, 'abck', 'hbook', 31))
+        t2 = self.Tuple(('a', [1,2], Ob(), 'bc'))
+        assert t.grep('b') == ('abck', 'hbook')
+        assert t.grep('^a') == ('abck',)
+        assert t.grep('1') == (1, 31)
+        assert t.grep(1) == (1, 31)
+        assert t2.grep([1,2]) == ([1,2],)
+
 
 ############## INTEGRATION #############
 
@@ -340,7 +395,7 @@ class FtypesIntegration(Behavior):
         self.nl = [1, 2, [3, 4], 5, [1, 2], 3]
 
     def it_invokes_types_method_through_this_wrapper(self):
-        assert ftypes.this(self.s).is_instanceof(ftypes.Str)
+        assert ftypes.this(self.s).isinstance(ftypes.Str)
         assert ftypes.this(self.l).hasattr('index')
 
     def it_do_methods_chain_operations(self):

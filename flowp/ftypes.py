@@ -1,5 +1,6 @@
 import functools
 import types
+import re
 
 
 ################# CORE #################
@@ -124,10 +125,10 @@ class Object(object):
         return type(self)
 
     @property
-    def is_callable(self):
+    def iscallable(self):
         return callable(self)
 
-    def is_instanceof(self, klass):
+    def isinstance(self, klass):
         return isinstance(self, klass)
 
     def hasattr(self, name):
@@ -135,6 +136,10 @@ class Object(object):
 
     def getattr(self, name):
         return getattr(self, name)
+
+    @property
+    def dir(self):
+        return dir(self)
 
 
 ############### ADAPTERS ###############
@@ -168,10 +173,10 @@ class ObjectAdapter(Object):
         return type(self._adaptee)
 
     @property
-    def is_callable(self):
+    def iscallable(self):
         return callable(self._adaptee)
 
-    def is_instanceof(self, klass):
+    def isinstance(self, klass):
         return isinstance(self._adaptee, klass) 
 
     def hasattr(self, name):
@@ -179,6 +184,10 @@ class ObjectAdapter(Object):
 
     def getattr(self, name):
         return getattr(self._adaptee, name)
+
+    @property
+    def dir(self):
+        return dir(self)
 
 
 class BoolAdapter(ObjectAdapter, int):
@@ -231,6 +240,7 @@ class Iterable(Object):
         return map(FunctionAdapter(func), self)
 
     def map_it(self, func):
+        """Like map method, but modify object itself"""
         func = FunctionAdapter(func)
         i = 0
         for item in self:
@@ -241,6 +251,7 @@ class Iterable(Object):
         return filter(FunctionAdapter(func), self)
 
     def filter_it(self, func):
+        """Like filter method, but modify object itself""" 
         func = FunctionAdapter(func)
         for item in self:
             if not func(item):
@@ -250,11 +261,50 @@ class Iterable(Object):
         return functools.reduce(FunctionAdapter(func), self)
 
     def join(self, glue):
-        return glue.join(self)
+        """Join elements of iterable with glue element. Even elements
+        of iterable which are not string object will be joined, by
+        converting.
+        :param str glue:
+            glue element
+        """
+        def func(item):
+            if isinstance(item, str):
+                return item
+            else:
+                return str(item)
+
+        iterable = map(func, self)
+        return glue.join(iterable)
 
     @property
     def set(self):
         return Set(self)
+
+    @property
+    def uniq(self):
+        """Remove repeated elements"""
+        return self.type(set(self))
+
+    @property
+    def flatten(self):
+        l = []
+        for item in self:
+            if isinstance(item, list) or isinstance(item, tuple) \
+                or isinstance(item, set):
+                
+                l.extend(list(item))
+            else:
+                l.append(item)
+        return self.type(l)
+
+    def replace(self, from_obj, to_obj):
+        return self.type([to_obj if o == from_obj else o for o in self])
+
+    def grep(self, pattern):
+        if not isinstance(pattern, str):
+            pattern = re.escape(str(pattern))
+        
+        return self.type([item for item in self if re.search(pattern, str(item))]) 
 
 
 class List(list, Iterable):
@@ -272,18 +322,6 @@ class Tuple(tuple, Iterable):
 class Set(set, Iterable):
     def map(self, func):
         return Set(super(Set, self).map(func))
-
-
-class Frozenset(frozenset, Iterable):
-    pass
-
-
-class Bytes(bytes, Iterable):
-    pass
-
-
-class Bytearray(bytearray, Iterable):
-    pass
 
 
 class Str(str, Iterable):
@@ -304,9 +342,6 @@ class Int(int, Object):
 class Float(float, Object):
     pass
 
-
-class Complex(complex, Object):
-    pass
 
 
 class Dict(dict):
