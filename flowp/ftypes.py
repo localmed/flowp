@@ -5,8 +5,8 @@ import types
 ################# CORE #################
 
 def this(obj):
-    """Convert object to the object with type which is consistent with flowp 
-    types.
+    """Convert given object to the flowp type object with type which is consistent 
+    with flowp types.
     Examples:
 
         class SomeClass(object):
@@ -230,8 +230,21 @@ class Iterable(Object):
     def map(self, func):
         return map(FunctionAdapter(func), self)
 
+    def map_it(self, func):
+        func = FunctionAdapter(func)
+        i = 0
+        for item in self:
+            self[i] = func(item)
+            i += 1
+
     def filter(self, func):
         return filter(FunctionAdapter(func), self)
+
+    def filter_it(self, func):
+        func = FunctionAdapter(func)
+        for item in self:
+            if not func(item):
+                self.remove(item)
 
     def reduce(self, func):
         return functools.reduce(FunctionAdapter(func), self)

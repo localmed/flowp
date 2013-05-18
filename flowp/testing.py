@@ -7,6 +7,9 @@ import sys
 
 
 class BDDTestCase(type):
+    """Meta class for test case class (Behavior). Creates aliases 
+    for setUp and tearDown methods: before_each and after_each.
+    """
     def __new__(cls, name, bases, namespace):
         new_namespace = {}
         for key, value in namespace.items():
@@ -31,7 +34,24 @@ Behavior = BDDTestCase('Behavior', (unittest.TestCase,), {})
 
 
 def when(*context_methods):
-    """Context wrapper for Behavior class """
+    """Creates context for specyfic method from generator function.
+    Works as decorator. Example:
+
+        def login_as_admin(self):
+            self.do_some_setup()
+            yield
+            self.do_some_teardown()
+
+        @when(login_as_admin)
+        def it_act_like_a_hero(self):
+            # base instructions
+            pass
+
+    Under the hood it wrap method by with statement. '@when' decorator
+    can consume many contexts.
+
+        @when(login_as_admin, have_wine)
+    """
     def get_new_test_method(test_method, context_method):
         isgeneratorfunction = inspect.isgeneratorfunction(context_method)
         if isgeneratorfunction:
@@ -67,16 +87,22 @@ def when(*context_methods):
 
     return func_consumer
 
+
 class TestProgram(unittest.TestProgram):
     def _do_discovery(self, argv, Loader = None):
         """New _do_discovery method which takes into consideration 
-            testLoader parameter from __init__ method"""
+        testLoader parameter from __init__ method. It discover test
+        cases.
+        """
         if not Loader:
             Loader = type(self.testLoader)
         super(TestProgram, self)._do_discovery(argv, Loader)
 
 
 class TestLoader(unittest.TestLoader):
+    """Changes prefixes for test files and test methods. Test methods,
+    behaviors should start with 'it' and test files with 'spec'
+    """
     testMethodPrefix = 'it'
 
     def discover(self, start_dir, pattern='spec*.py', top_level_dir=None):
@@ -86,6 +112,7 @@ class TestLoader(unittest.TestLoader):
 
 
 class TextTestResult(unittest.TestResult):
+    """Changes test results to more readable form."""
     separator1 = '-' * 70
     separator2 = '-' * 70
     COLOR_GREEN = '\033[92m'
@@ -234,6 +261,8 @@ class TextTestRunner(unittest.TextTestRunner):
     resultclass = TextTestResult
 
 
+# Allows run flowp.testing modules as a script. It behaves like 
+# unittest.main script module.
 main = TestProgram
 
 if __name__ == '__main__':
