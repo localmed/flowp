@@ -18,14 +18,18 @@ def this(obj):
         this(1) is ftypes.Int(1)
         this(some_obj).__class__ is ObjectAdapter
     """
-    obj_type = type(obj)
+    # If it's already ftype.Object, return as is
+    if isinstance(obj, Object):
+        return obj
 
     # If built-in type convert from TYPES_MAP
+    obj_type = type(obj)
     if obj_type in TYPES_MAP.keys():
         new_type = TYPES_MAP[obj_type]
         return new_type(obj)
 
-    # If not built-in type, return ObjectAdapter with given obj as adaptee
+    # If not built-in type or ftype.Object, return ObjectAdapter 
+    # with given obj as adaptee
     return ObjectAdapter(obj)
 
 class ShouldThrow(object):
@@ -237,7 +241,7 @@ class Iterable(Object):
         return sum(self)
 
     def map(self, func):
-        return map(FunctionAdapter(func), self)
+        return self.type(map(FunctionAdapter(func), self))
 
     def map_it(self, func):
         """Like map method, but modify object itself"""
@@ -314,9 +318,15 @@ class List(list, Iterable):
         lst.reverse()
         return List(lst)
 
+    @property
+    def dict(self):
+        return Dict(self)
+
 
 class Tuple(tuple, Iterable):
-    pass
+    @property
+    def dict(self):
+        return Dict(self)
 
 
 class Set(set, Iterable):

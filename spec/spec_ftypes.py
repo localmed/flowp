@@ -168,6 +168,7 @@ class ThisMethod(Behavior):
         with mock.patch.dict('flowp.ftypes.TYPES_MAP', {str:Str_mock}):
             ftypes.this(obj)
         assert not Str_mock.called
+        assert ftypes.this(obj) is obj
 
     def it_leaves_class_and_object_attributes(self):
         class SomeClass(object):
@@ -384,6 +385,16 @@ class Iterable(Behavior):
         assert t.grep('1') == (1, 31)
         assert t.grep(1) == (1, 31)
         assert t2.grep([1,2]) == ([1,2],)
+
+
+class List(Behavior):
+    def it_have_dict_property(self):
+        assert ftypes.List([(1,2), (3,4)]).dict == {1:2, 3:4}
+
+
+class Tuple(Behavior):
+    def it_have_dict_property(self):
+        assert ftypes.Tuple(((1,2), (3,4))).dict == {1:2, 3:4}
 
 
 ############## INTEGRATION #############
