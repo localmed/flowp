@@ -103,7 +103,11 @@ def sh(command):
     """ 
     subprocess.check_call(command, shell=True)
 
-import pdb
+
+# Import alias for better debugging / mocking
+import_alias = __import__
+
+
 class FlowpFileExecuter(ftypes.Object):
     def __init__(self, args):
         self.args = args
@@ -122,6 +126,6 @@ class FlowpFileExecuter(ftypes.Object):
         return tasks.dict
 
     def execute(self):
-        flowpfile = __import__('flowpfile', globals(), locals(), [], -1) 
+        flowpfile = import_alias('flowpfile', globals(), locals(), [], -1) 
         for task, args in self.tasks.items():
             getattr(flowpfile, task)(*args) 

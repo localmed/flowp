@@ -40,11 +40,6 @@ class Process(Behavior):
         subpr_mock.assert_called_once_with(['testproc', '-a', '1', 'b'])
 
 
-class FilesFunction(Behavior):
-    def it_returns_files_list_by_path_star_pattern(self):
-        self.fail()
-
-
 class FileUtils(Behavior):
     def before_each(self):
         self.org_working_dir = os.getcwd() 
@@ -111,22 +106,22 @@ class FlowpFileExecuter(Behavior):
         assert self.E(self.args2).tasks == {'task1': ['abc'], 'task2': []}
         assert self.E(self.args3).tasks == {'task1': [], 'task2': ['ab', 'cd']}
 
-    @mock.patch('__builtin__.__import__')
+    @mock.patch('flowp.system.import_alias')
     def it_executes_tasks_from_flowpfile_by_given_script_arguments(self, im_mock):
-        flowpfile_mock = mock.Mock()
+        flowpfile_mock = mock.MagicMock()
         im_mock.return_value = flowpfile_mock
 
         self.E(self.args1).execute()
         assert im_mock.call_args[0][0] == 'flowpfile'
-        assert flowpfile_mock.task1.assert_called_with()
-        assert flowpfile_mock.task2.assert_called_with()
+        flowpfile_mock.task1.assert_called_with()
+        flowpfile_mock.task2.assert_called_with()
 
+        flowpfile_mock.reset_mock()
         self.E(self.args2).execute()
-        flowpfile_mock.reset_mock()
-        assert flowpfile_mock.task1.assert_called_with('abc')
-        assert flowpfile_mock.task2.assert_called_with()
+        flowpfile_mock.task1.assert_called_with('abc')
+        flowpfile_mock.task2.assert_called_with()
 
-        self.E(self.args3).execute()
         flowpfile_mock.reset_mock()
-        assert flowpfile_mock.task1.assert_called_with()
-        assert flowpfile_mock.task2.assert_called_with('ab', 'cd')
+        self.E(self.args3).execute()
+        flowpfile_mock.task1.assert_called_with()
+        flowpfile_mock.task2.assert_called_with('ab', 'cd')
