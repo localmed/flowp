@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from flowp import ftypes
 from flowp.testing import Behavior
 import types
@@ -11,7 +11,7 @@ class Should(Behavior):
         class Int(int):
             pass
 
-        class Bool(object):
+        class Bool:
             def __init__(self, subject):
                 self.subject = subject
 
@@ -21,7 +21,7 @@ class Should(Behavior):
         class List(list):
             pass
 
-        class NoneType(object):
+        class NoneType:
             def __init__(self):
                 self.value = None
 
@@ -73,7 +73,7 @@ class Should(Behavior):
         func.should = ftypes.Should(func) 
         func.should.throw(TestException).by_call()
 
-        with self.assertRaisesRegexp(AssertionError, r'^TestException'):
+        with self.assertRaisesRegex(AssertionError, r'^TestException'):
             func2.should = ftypes.Should(func2)
             func2.should.throw(TestException).by_call()
 
@@ -124,7 +124,7 @@ class Object(Behavior):
 
 class ThisMethod(Behavior):
     def it_transforms_builtin_types_to_flowp_types(self):
-        class SomeClass(object):
+        class SomeClass:
             pass
 
         assert isinstance(ftypes.this(1), ftypes.Int)
@@ -139,7 +139,7 @@ class ThisMethod(Behavior):
         assert isinstance(ftypes.this(SomeClass), ftypes.TypeAdapter)
 
     def it_transform_function_types_to_flowp_function_types(self):
-        class SomeClass(object):
+        class SomeClass:
             def method(self):
                 return 1
 
@@ -152,7 +152,7 @@ class ThisMethod(Behavior):
         assert isinstance(ftypes.this("abc".index), ftypes.FunctionAdapter)
 
     def it_return_object_adapter_if_not_builtin_type(self):
-        class SomeClass(object):
+        class SomeClass:
             pass
 
         obj = SomeClass()
@@ -171,7 +171,7 @@ class ThisMethod(Behavior):
         assert ftypes.this(obj) is obj
 
     def it_leaves_class_and_object_attributes(self):
-        class SomeClass(object):
+        class SomeClass:
             a = 1
             
             def __init__(self):
@@ -196,7 +196,7 @@ class ObjectAdapter(Behavior):
             if not att_name.startswith('_') and isinstance(att, att_type):
                 return True
             return False
-        return filter(_, klass.__dict__.keys())
+        return list(filter(_, klass.__dict__.keys()))
 
     def it_inherits_from_flowp_core_Object(self):
         assert issubclass(ftypes.ObjectAdapter, ftypes.Object)
@@ -208,7 +208,7 @@ class ObjectAdapter(Behavior):
         assert self.adapter.index("c") == 2
 
     def it_pass_property_lookup_to_adaptee(self):
-        class SomeClass(object):
+        class SomeClass:
             @property
             def prop(self):
                 return 1
@@ -236,7 +236,7 @@ class ObjectAdapter(Behavior):
 
     def it_show_adapter_and_adaptee_attributes_by_dir_func(self):
         base_atts = [a for a in dir(self.adaptee) if not a.startswith('__')]
-        adpt_atts = type(self.adapter).__dict__.keys()
+        adpt_atts = list(type(self.adapter).__dict__.keys())
         adpt_atts.extend(self.adapter.__dict__.keys()) 
         adpt_atts.extend(object.__dict__.keys())
         atts = list(set(base_atts + adpt_atts))
@@ -247,10 +247,10 @@ class ObjectAdapter(Behavior):
 
     def it_overrides_all_properties_and_methods_from_flowp_Object(self):
         base_atts = self.class_attributes(ftypes.Object, 
-                types.UnboundMethodType) \
+                types.FunctionType) \
             + self.class_attributes(ftypes.Object, property)
         adpt_atts = self.class_attributes(ftypes.ObjectAdapter, 
-                types.UnboundMethodType) \
+                types.FunctionType) \
             + self.class_attributes(ftypes.ObjectAdapter, property)
         assert set(adpt_atts) >= set(base_atts)
 
@@ -356,7 +356,7 @@ class Iterable(Behavior):
         assert t.uniq == (1,2,3,4)
 
     def it_do_join_operation(self):
-        class Obj(object):
+        class Obj:
             def __repr__(self):
                 return 'x'
  
@@ -366,7 +366,7 @@ class Iterable(Behavior):
         assert self.List(['a', Obj(), 'c']).join('.') == 'a.x.c'
 
     def it_do_replace_operation(self):
-        class Obj(object):
+        class Obj:
             pass
         obj = Obj()
         t = self.Tuple((1, (1,2), obj))
@@ -376,7 +376,7 @@ class Iterable(Behavior):
         assert t.replace(obj, 3) == (1, (1,2), 3)
 
     def it_do_grep_operation(self):
-        class Ob(object):
+        class Ob:
             pass
         t = self.Tuple((1, 'abck', 'hbook', 31))
         t2 = self.Tuple(('a', [1,2], Ob(), 'bc'))

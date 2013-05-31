@@ -24,13 +24,8 @@ class BDDTestCase(type):
         return type.__new__(cls, name, bases, new_namespace)
 
 
-# Compatible way of using metaclass through python 2 and 3
-# Same as: (in python 2)
-# class Behavior(unittest.TestCase):
-#     __metaclass__ = BDDTestCase
-# 
-# Creates basic class for testing. New style of unittest.TestCase
-Behavior = BDDTestCase('Behavior', (unittest.TestCase,), {})
+class Behavior(unittest.TestCase, metaclass=BDDTestCase):
+    pass
 
 
 def when(*context_methods):
@@ -82,7 +77,7 @@ def when(*context_methods):
         for context_method in context_methods:
             test_method = get_new_test_method(test_method, context_method) 
 
-        test_method.contexts = map(get_context_name, context_methods) 
+        test_method.contexts = list(map(get_context_name, context_methods))
         return test_method
 
     return func_consumer

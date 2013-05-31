@@ -61,7 +61,7 @@ class Process(ftypes.Object):
         subprocess.check_call(self.elements.flatten.map(func))
 
 
-class cd(object):
+class cd:
     """Change working directory. Behave exacly like os.chdir, except
     that it can be used as context manager.
     Example:

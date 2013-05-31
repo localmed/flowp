@@ -10,7 +10,7 @@ def this(obj):
     with flowp types.
     Examples:
 
-        class SomeClass(object):
+        class SomeClass:
             pass
         some_obj = SomeClass()
 
@@ -32,7 +32,7 @@ def this(obj):
     # with given obj as adaptee
     return ObjectAdapter(obj)
 
-class ShouldThrow(object):
+class ShouldThrow:
     def __init__(self, should_obj):
         self.should_obj = should_obj
         self.exception_class = None
@@ -50,7 +50,7 @@ class ShouldThrow(object):
             pass 
 
 
-class Should(object):
+class Should:
     Throw = ShouldThrow
 
     def __init__(self, context):
@@ -115,7 +115,7 @@ class Should(object):
 class Type(type):
     pass
 
-class Object(object):
+class Object:
     Should = Should
 
     @property
@@ -252,7 +252,7 @@ class Iterable(Object):
             i += 1
 
     def filter(self, func):
-        return filter(FunctionAdapter(func), self)
+        return self.type(filter(FunctionAdapter(func), self))
 
     def filter_it(self, func):
         """Like filter method, but modify object itself""" 

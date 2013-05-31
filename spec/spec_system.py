@@ -1,6 +1,6 @@
 from flowp.testing import Behavior
 from flowp import system
-import mock
+from unittest import mock
 import os
 import shutil
 
