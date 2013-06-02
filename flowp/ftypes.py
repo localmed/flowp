@@ -52,64 +52,81 @@ class ShouldThrow:
 
 class Should:
     Throw = ShouldThrow
+    
+    # Flag which says that this class should be omitted in test result tracebacks
+    # it is readed by flowp.testing module
+    _should_assert = True
 
     def __init__(self, context):
         """
         Construct Should object
-        @param context: context of Should object
+        :param context: context of Should object
         """
         self.context = context
         self.throw = self.Throw(self)
 
-    def __eq__(self, other):
-        assert self.context == other
+    def __eq__(self, expectation):
+        assert self.context == expectation,\
+            "expected %s, given %s" % (expectation, self.context)
 
-    def __ne__(self, other):
-        assert self.context != other
+    def __ne__(self, expectation):
+        assert self.context != expectation,\
+            "expected %s != %s" % (self.context, expectation)
 
-    def __lt__(self, other):
-        assert self.context < other
+    def __lt__(self, expectation):
+        assert self.context < expectation,\
+            "expected %s < %s" % (self.context, expectation)
 
-    def __le__(self, other):
-        assert self.context <= other
+    def __le__(self, expectation):
+        assert self.context <= expectation,\
+            "expected %s <= %s" % (self.context, expectation)
 
-    def __gt__(self, other):
-        assert self.context > other
+    def __gt__(self, expectation):
+        assert self.context > expectation,\
+            "expected %s > %s" % (self.context, expectation)
 
-    def __ge__(self, other):
-        assert self.context >= other
+    def __ge__(self, expectation):
+        assert self.context >= expectation,\
+            "expected %s >= %s" % (self.context, expectation)
 
-    def be(self, other):
-        assert self.context is other
+    def be(self, expectation):
+        assert self.context is expectation,\
+            "%s is not %s" % (self.context, expectation)
 
-    def not_be(self, other):
-        assert self.context is not other
+    def not_be(self, expectation):
+        assert self.context is not expectation,\
+            "%s is %s" % (self.context, expectation)
 
     @property
     def be_true(self):
-        assert self.context.subject is True
-        return None
+        assert self.context.subject is True,\
+            "expected %s, given %s" % (True, self.context.subject)
 
     @property
     def be_false(self):
-        assert self.context.subject is False
-        return None
+        assert self.context.subject is False,\
+            "expected %s, given %s" % (False, self.context.subject)
 
     @property
     def be_none(self):
-        assert self.context.value is None
+        assert self.context.value is None,\
+            "expected %s, given %s" % (None, self.context.value)
 
-    def be_in(self, other):
-        assert self.context in other
+    def be_in(self, expectation):
+        assert self.context in expectation,\
+            "%s not in %s" % (self.context, expectation)
 
-    def not_be_in(self, other):
-        assert self.context not in other
+    def not_be_in(self, expectation):
+        assert self.context not in expectation,\
+            "%s in %s" % (self.context, expectation)
 
-    def be_instanceof(self, other):
-        assert isinstance(self.context, other) is True
+    def be_instanceof(self, expectation):
+        assert isinstance(self.context, expectation),\
+            "expected %s, given %s" % (expectation, type(self.context))
 
-    def not_be_instanceof(self, other):
-        assert isinstance(self.context, other) is False
+    def not_be_instanceof(self, expectation):
+        assert not isinstance(self.context, expectation),\
+            "expected not %s, given %s" % (expectation, type(self.context))
 
 
 class Type(type):
@@ -331,7 +348,7 @@ class Tuple(tuple, Iterable):
 
 class Set(set, Iterable):
     def map(self, func):
-        return Set(super(Set, self).map(func))
+        return Set(super().map(func))
 
 
 class Str(str, Iterable):
@@ -340,7 +357,7 @@ class Str(str, Iterable):
         return Int(self)
 
     def split(self, *args, **kwargs):
-        return List(super(Str, self).split(*args, **kwargs))
+        return List(super().split(*args, **kwargs))
 
 
 class Int(int, Object):

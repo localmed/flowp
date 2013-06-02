@@ -34,7 +34,7 @@ def when(*context_methods):
 
         def login_as_admin(self):
             self.do_some_setup()
-            yield
+            yield # base instructions
             self.do_some_teardown()
 
         @when(login_as_admin)
@@ -83,31 +83,10 @@ def when(*context_methods):
     return func_consumer
 
 
-class TestProgram(unittest.TestProgram):
-    def _do_discovery(self, argv, Loader = None):
-        """New _do_discovery method which takes into consideration 
-        testLoader parameter from __init__ method. It discover test
-        cases.
-        """
-        if not Loader:
-            Loader = type(self.testLoader)
-        super(TestProgram, self)._do_discovery(argv, Loader)
-
-
-class TestLoader(unittest.TestLoader):
-    """Changes prefixes for test files and test methods. Test methods,
-    behaviors should start with 'it' and test files with 'spec'
-    """
-    testMethodPrefix = 'it'
-
-    def discover(self, start_dir, pattern='spec*.py', top_level_dir=None):
-        # Force spec pattern
-        pattern = 'spec*.py'
-        return super(TestLoader, self).discover(start_dir, pattern, top_level_dir) 
-
-
 class TextTestResult(unittest.TestResult):
-    """Changes test results to more readable form."""
+    """Changes test results to more readable form. It's alternative
+    to unittest.TextTestResult. Used by TextTestRunner.
+    """
     separator1 = '-' * 70
     separator2 = '-' * 70
     COLOR_GREEN = '\033[92m'
@@ -116,51 +95,96 @@ class TextTestResult(unittest.TestResult):
     COLOR_BLUE = '\033[94m'
 
     def __init__(self, stream, descriptions, verbosity):
-        super(TextTestResult, self).__init__()
+        super().__init__(stream, descriptions, verbosity)
         self.stream = stream
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
-        self.groups = set()
-        self.context_groups = set()
+        self.analyzed_testcases = set()
 
+    def _is_relevant_tb_level(self, tb):
+        """Decide which frame in traceback will be shown at results, when
+        some exception or error occurs. It hide frames from unittest module and
+        from flowp.ftypes.Should class.
 
-    def getGroupDescription(self, test):
+        Used by unittest.TestResult.
+        """
+        # Basic implementation from oryginal unittest.TestResult class
+        if '__unittest' in tb.tb_frame.f_globals:
+            return True
+
+        # Additional implementation
+        if 'self' in tb.tb_frame.f_locals:
+            s = tb.tb_frame.f_locals['self']
+            if hasattr(s, '_should_assert'):
+                return True
+
+        #
+        return False
+
+    def _testcase_name(self, test):
         return str(test).split()[1][1:-1]
 
-    def getDescription(self, test):
-        test_name = str(test).split()[0].replace('_', ' ')[3:]
-        return test_name
+    def _formatted_description(self, test):
+        return '    - ' + self.getDescription(test) + ' ... '
 
-    def getFormattedDescription(self, test):
-        prefix = '    - '
-        postfix = ' ... '
-        description = self.getDescription(test)
-        return prefix + description + postfix
+    def _format_traceback_line(self, line):
+        """Format single line of traceback
+        :param str line:
+            given traceback line
+        """
+        line = '  ' + line
+        file_line = re.match(r'^\s*File "([\w/\.-]+)", line (\d+),', line)
+        # reformat lines where is information about file and line number
+        if file_line:
+            return '  File "%s":%s' % (file_line.group(1), file_line.group(2))
+        # remove first line of Traceback (which is not really necessary)
+        elif re.match(r'^Traceback', line):
+            return ''
+        # changes last line to blue color
+        elif re.match(r'^  \S', line):
+            return self.COLOR_BLUE + line + self.COLOR_END
+        else:
+            return line
+
+    def _format_traceback(self, traceback):
+        """Format whole traceback. Eliminate unnecessary informations and
+        add some colors.
+        :param str traceback:
+        """
+        traceback = traceback.split("\n")[1:]
+        traceback = map(self._format_traceback_line, traceback)
+        traceback = "\n".join(traceback)
+        return traceback
+
+    def getDescription(self, test):
+        """Get test name, it's method name from test case.
+        Unlike oryginal method, it return name without test case name
+        at the end and with replaced underscores to <space>.
+        """
+        return str(test).split()[0].replace('_', ' ')[3:]
 
     def startTest(self, test):
-        super(TextTestResult, self).startTest(test)
-        if self.showAll:
-            group = self.getGroupDescription(test)
-            if group not in self.groups:
-                self.stream.writeln("\n%s:" % group)
-                self.groups.add(group)
+        """Print test group name (test case) if test is first in it's group.
+        Results are visible in verbose mode as headers at test results.
 
-            # Creating, printing contexts groups (unfinished, doesn't print good) 
-            #test_method = getattr(test, test._testMethodName) 
-            #if hasattr(test_method, 'contexts'):
-            #    for context in test_method.contexts:
-            #        if context not in self.context_groups:
-            #            self.stream.writeln("\n  %s:" % context)
-            #            self.context_groups.add(context)    
+        This assume that tests should be runned in order regarding to test case
+        groups.
+        """
+        super().startTest(test)
+        if self.showAll:
+            testcase_name = self._testcase_name(test)
+            if testcase_name not in self.analyzed_testcases:
+                self.stream.writeln("\n%s:" % testcase_name)
+                self.analyzed_testcases.add(testcase_name)
 
             self.stream.flush()
 
     def addSuccess(self, test):
-        super(TextTestResult, self).addSuccess(test)
+        super().addSuccess(test)
         if self.showAll:
             self.stream.write(self.COLOR_GREEN)
-            self.stream.write(self.getFormattedDescription(test))
+            self.stream.write(self._formatted_description(test))
             self.stream.writeln("OK")
             self.stream.write(self.COLOR_END)
         elif self.dots:
@@ -168,10 +192,10 @@ class TextTestResult(unittest.TestResult):
             self.stream.flush()
 
     def addError(self, test, err):
-        super(TextTestResult, self).addError(test, err)
+        super().addError(test, err)
         if self.showAll:
             self.stream.write(self.COLOR_RED)
-            self.stream.write(self.getFormattedDescription(test))
+            self.stream.write(self._formatted_description(test))
             self.stream.writeln("ERROR")
             self.stream.write(self.COLOR_END)
         elif self.dots:
@@ -179,10 +203,10 @@ class TextTestResult(unittest.TestResult):
             self.stream.flush()
 
     def addFailure(self, test, err):
-        super(TextTestResult, self).addFailure(test, err)
+        super().addFailure(test, err)
         if self.showAll:
             self.stream.write(self.COLOR_RED)
-            self.stream.write(self.getFormattedDescription(test))
+            self.stream.write(self._formatted_description(test))
             self.stream.writeln("FAIL")
             self.stream.write(self.COLOR_END)
         elif self.dots:
@@ -190,7 +214,7 @@ class TextTestResult(unittest.TestResult):
             self.stream.flush()
 
     def addSkip(self, test, reason):
-        super(TextTestResult, self).addSkip(test, reason)
+        super().addSkip(test, reason)
         if self.showAll:
             self.stream.write(self.getDescription(test))
             self.stream.writeln("skipped {0!r}".format(reason))
@@ -199,7 +223,7 @@ class TextTestResult(unittest.TestResult):
             self.stream.flush()
 
     def addExpectedFailure(self, test, err):
-        super(TextTestResult, self).addExpectedFailure(test, err)
+        super().addExpectedFailure(test, err)
         if self.showAll:
             self.stream.write(self.getDescription(test))
             self.stream.writeln("expected failure")
@@ -208,7 +232,7 @@ class TextTestResult(unittest.TestResult):
             self.stream.flush()
 
     def addUnexpectedSuccess(self, test):
-        super(TextTestResult, self).addUnexpectedSuccess(test)
+        super().addUnexpectedSuccess(test)
         if self.showAll:
             self.stream.write(self.getDescription(test))
             self.stream.writeln("unexpected success")
@@ -222,29 +246,12 @@ class TextTestResult(unittest.TestResult):
         self.printErrorList('ERROR', self.errors)
         self.printErrorList('FAIL', self.failures)
 
-    def _format_traceback_line(self, line):
-        line = '  ' + line
-        file_line = re.match(r'^\s*File "([\w/\.-]+)", line (\d+),', line)
-        if file_line:
-            return '  File "%s":%s' % (file_line.group(1), file_line.group(2))
-        elif re.match(r'^Traceback', line):
-            return ''
-        elif re.match(r'^  \S', line):
-            return self.COLOR_BLUE + line + self.COLOR_END
-        else:
-            return line
-
-    def _format_traceback(self, traceback):
-        traceback = traceback.split("\n")[1:]
-        traceback = map(self._format_traceback_line, traceback)
-        traceback = "\n".join(traceback)
-        return traceback
-
     def printErrorList(self, flavour, errors):
         for test, err in errors:
             self.stream.writeln(self.separator1)
             self.stream.writeln()
-            place = '"%s" [%s]' % (self.getDescription(test), self.getGroupDescription(test))
+            place = '"%s" [%s]' % (self.getDescription(test), 
+                self._testcase_name(test))
             self.stream.write(self.COLOR_RED)
             self.stream.writeln("%s: %s" % (flavour, place))
             self.stream.write(self.COLOR_END)
@@ -252,15 +259,42 @@ class TextTestResult(unittest.TestResult):
             self.stream.writeln("%s" % self._format_traceback(err))
 
 
+class TestProgram(unittest.TestProgram):
+    def _do_discovery(self, argv, Loader = None):
+        """New _do_discovery method which takes into consideration 
+        testLoader parameter from TestProgram.__init__ method, when 
+        discover mode is given. It discover test cases.
+
+        In oryginal version of this method (from unittest module), 
+        custom loader is ignored when discover mode is given (bug?).
+        """
+        if not Loader:
+            Loader = type(self.testLoader)
+        super()._do_discovery(argv, Loader)
+
+
+class TestLoader(unittest.TestLoader):
+    """Changes prefixes for test files and test methods. Test methods,
+    behaviors should start with 'it' and test files with 'spec'
+    """
+    testMethodPrefix = 'it'
+
+    def discover(self, start_dir, pattern='spec*.py', top_level_dir=None):
+        # Force spec pattern
+        pattern = 'spec*.py'
+        return super().discover(start_dir, pattern, top_level_dir) 
+
+
 class TextTestRunner(unittest.TextTestRunner):
+    """Set custom flowp test result class"""
     resultclass = TextTestResult
 
 
-# Allows run flowp.testing modules as a script. It behaves like 
+# Allow to run flowp.testing module as a script. It behaves like 
 # unittest.main script module.
 main = TestProgram
 
 if __name__ == '__main__':
-    sys.argv[0] = "python -m flowp.testing"
+    sys.argv[0] = "python3 -m flowp.testing"
     loader = TestLoader()
     main(module=None, testLoader=loader, testRunner=TextTestRunner)
