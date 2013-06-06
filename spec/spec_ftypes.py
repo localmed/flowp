@@ -6,88 +6,12 @@ import types
 
 ################# CORE #################
 
-class Should(Behavior):
-    def before_each(self):
-        class Int(int):
-            pass
-
-        class Bool:
-            def __init__(self, subject):
-                self.subject = subject
-
-            def __bool__(self):
-                return self.subject
-
-        class List(list):
-            pass
-
-        class NoneType:
-            def __init__(self):
-                self.value = None
-
-        self.Int = Int
-        self.Bool = Bool
-        self.int = Int(1)
-        self.int.should = ftypes.Should(self.int)
-        self.true = Bool(True)
-        self.true.should = ftypes.Should(self.true)
-        self.false = Bool(False)
-        self.false.should = ftypes.Should(self.false)
-        self.list = List([1, 2, 3])
-        self.list.should = ftypes.Should(self.list)
-        self.none = NoneType()
-        self.none.should = ftypes.Should(self.none)
-
-    def it_do_correct_should_asserts(self):
-        self.int.should.be_instanceof(self.Int)
-        self.int.should == 1
-        self.int.should != 2
-        self.int.should < 2
-        self.int.should <= 1
-        self.int.should > 0
-        self.int.should >= 1
-        self.int.should.be(self.int)
-        self.int.should.not_be(1)
-        self.true.should.be_true
-        self.false.should.be_false
-        self.none.should.be_none
-        self.int.should.be_in([1, 2, 3])
-        self.int.should.not_be_in([2, 3, 4])
-        self.int.should.be_instanceof(self.Int)
-        self.int.should.not_be_instanceof(self.Bool)
-
-    def it_do_not_correct_should_asserts(self):
-        with self.assertRaises(AssertionError):
-            self.int.should == 2
-
-    def it_do_should_raise_assert(self):
-        class TestException(Exception):
-            pass
-
-        def func():
-            raise TestException()
-
-        def func2():
-            pass
-
-        func.should = ftypes.Should(func) 
-        func.should.throw(TestException).by_call()
-
-        with self.assertRaisesRegex(AssertionError, r'^TestException'):
-            func2.should = ftypes.Should(func2)
-            func2.should.throw(TestException).by_call()
-
-
 class Object(Behavior):
     class SomeClass(ftypes.Object):
         x = 1
 
     def before_each(self):
         self.object = ftypes.Object()
-
-    def it_have_should_object(self):
-        assert isinstance(self.object.should, ftypes.Should)
-        assert self.object.should.context is self.object
 
     def it_have_type_property(self):
         assert self.object.type is ftypes.Object
@@ -113,9 +37,6 @@ class Object(Behavior):
         ob = self.SomeClass()
         assert ob.getattr('x') == 1
     
-    def it_have_default_should_class_as_attribute(self):
-        assert issubclass(self.object.Should, ftypes.Should)
-
     def it_have_dir_property(self):
         obj = self.SomeClass()
         assert obj.dir == dir(obj)
@@ -230,9 +151,6 @@ class ObjectAdapter(Behavior):
         assert adapter.iscallable
         assert not self.adapter.iscallable
         assert self.adapter.type is str
-
-    def it_have_Should_object_with_adaptee_context(self):
-        assert self.adapter.should.context is self.adaptee
 
     def it_show_adapter_and_adaptee_attributes_by_dir_func(self):
         base_atts = [a for a in dir(self.adaptee) if not a.startswith('__')]
@@ -395,26 +313,3 @@ class List(Behavior):
 class Tuple(Behavior):
     def it_have_dict_property(self):
         assert ftypes.Tuple(((1,2), (3,4))).dict == {1:2, 3:4}
-
-
-############## INTEGRATION #############
-
-class FtypesIntegration(Behavior):
-    def before_each(self):
-        self.s = 'abc-def-ghi'
-        self.l = ['a', 'b', 'c', 'd', 'e']
-        self.nl = [1, 2, [3, 4], 5, [1, 2], 3]
-
-    def it_invokes_types_method_through_this_wrapper(self):
-        assert ftypes.this(self.s).isinstance(ftypes.Str)
-        assert ftypes.this(self.l).hasattr('index')
-
-    def it_do_methods_chain_operations(self):
-        s = ftypes.Str(self.s)
-        l = ftypes.List(self.l)
-        nl = ftypes.List(self.nl)
-        l2 = ftypes.List(['1', '2', '1', '1', '3', '2', '4'])
-
-        assert s.split('-').reversed.join('.') == 'ghi.def.abc'
-        assert l.filter(lambda x: x != 'c') == ['a', 'b', 'd', 'e']
-        assert l2.set.map(lambda x: x.int) == ftypes.Set([1, 2, 3, 4])

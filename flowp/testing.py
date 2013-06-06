@@ -28,6 +28,85 @@ class Behavior(unittest.TestCase, metaclass=BDDTestCase):
     pass
 
 
+class expect:
+    # Flag which says that this class should be omitted in test result tracebacks
+    _pass_unittest_traceback = True
+
+    def __init__(self, context):
+        self._context = context
+        self._expected_exception = None
+
+    @property
+    def ok(self):
+        assert self._context,\
+            "expected %s, given %s" % (True, self._context)    
+
+    @property
+    def not_ok(self):
+        assert not self._context,\
+            "expected not %s, given %s" % (True, self._context)    
+
+    def __eq__(self, expectation):
+        assert self._context == expectation,\
+            "expected %s, given %s" % (expectation, self._context)
+
+    def __ne__(self, expectation):
+        assert self._context != expectation,\
+            "expected %s != %s" % (self._context, expectation)
+
+    def __lt__(self, expectation):
+        assert self._context < expectation,\
+            "expected %s < %s" % (self._context, expectation)
+
+    def __le__(self, expectation):
+        assert self._context <= expectation,\
+            "expected %s <= %s" % (self._context, expectation)
+
+    def __gt__(self, expectation):
+        assert self._context > expectation,\
+            "expected %s > %s" % (self._context, expectation)
+
+    def __ge__(self, expectation):
+        assert self._context >= expectation,\
+            "expected %s >= %s" % (self._context, expectation)
+
+    def isinstance(self, expectation):
+        assert isinstance(self._context, expectation),\
+            "expected %s, given %s" % (expectation, type(self._context))
+
+    def not_isinstance(self, expectation):
+        assert not isinstance(self._context, expectation),\
+            "expected not %s, given %s" % (expectation, type(self._context))
+    
+    def be_in(self, expectation):
+        assert self._context in expectation,\
+            "%s not in %s" % (self._context, expectation)
+
+    def not_be_in(self, expectation):
+        assert self._context not in expectation,\
+            "%s in %s" % (self._context, expectation)
+
+    def be(self, expectation):
+        assert self._context is expectation,\
+            "%s is not %s" % (self._context, expectation)
+
+    def not_be(self, expectation):
+        assert self._context is not expectation,\
+            "%s is %s" % (self._context, expectation)
+
+    def to_raise(self, expected_exception):
+        self._expected_exception = expected_exception
+        return self
+
+    def by_call(self, *args, **kwargs):
+        try:
+            self._context(*args, **kwargs)
+            raise AssertionError("%s exception should be raised" % \
+                self._expected_exception.__name__)
+        except self._expected_exception:
+            pass 
+
+
 def when(*context_methods):
     """Creates context for specyfic method from generator function.
     Works as decorator. Example:
@@ -116,7 +195,7 @@ class TextTestResult(unittest.TestResult):
         # Additional implementation
         if 'self' in tb.tb_frame.f_locals:
             s = tb.tb_frame.f_locals['self']
-            if hasattr(s, '_should_assert'):
+            if hasattr(s, '_pass_unittest_traceback'):
                 return True
 
         #
@@ -259,20 +338,6 @@ class TextTestResult(unittest.TestResult):
             self.stream.writeln("%s" % self._format_traceback(err))
 
 
-class TestProgram(unittest.TestProgram):
-    def _do_discovery(self, argv, Loader = None):
-        """New _do_discovery method which takes into consideration 
-        testLoader parameter from TestProgram.__init__ method, when 
-        discover mode is given. It discover test cases.
-
-        In oryginal version of this method (from unittest module), 
-        custom loader is ignored when discover mode is given (bug?).
-        """
-        if not Loader:
-            Loader = type(self.testLoader)
-        super()._do_discovery(argv, Loader)
-
-
 class TestLoader(unittest.TestLoader):
     """Changes prefixes for test files and test methods. Test methods,
     behaviors should start with 'it' and test files with 'spec'
@@ -290,11 +355,5 @@ class TextTestRunner(unittest.TextTestRunner):
     resultclass = TextTestResult
 
 
-# Allow to run flowp.testing module as a script. It behaves like 
-# unittest.main script module.
-main = TestProgram
-
 if __name__ == '__main__':
-    sys.argv[0] = "python3 -m flowp.testing"
-    loader = TestLoader()
-    main(module=None, testLoader=loader, testRunner=TextTestRunner)
+    unittest.main(module=None, testLoader=TestLoader(), testRunner=TextTestRunner)

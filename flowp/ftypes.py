@@ -32,115 +32,10 @@ def this(obj):
     # with given obj as adaptee
     return ObjectAdapter(obj)
 
-class ShouldThrow:
-    def __init__(self, should_obj):
-        self.should_obj = should_obj
-        self.exception_class = None
-
-    def __call__(self, expected_exception_class):
-        self.expected_exception_class = expected_exception_class
-        return self
-
-    def by_call(self, *args, **kwargs):
-        try:
-            self.should_obj.context(*args, **kwargs)
-            assert False, "%s exception should be raised" % \
-                self.expected_exception_class.__name__
-        except self.expected_exception_class:
-            pass 
-
-
-class Should:
-    Throw = ShouldThrow
-    
-    # Flag which says that this class should be omitted in test result tracebacks
-    # it is readed by flowp.testing module
-    _should_assert = True
-
-    def __init__(self, context):
-        """
-        Construct Should object
-        :param context: context of Should object
-        """
-        self.context = context
-        self.throw = self.Throw(self)
-
-    def __eq__(self, expectation):
-        assert self.context == expectation,\
-            "expected %s, given %s" % (expectation, self.context)
-
-    def __ne__(self, expectation):
-        assert self.context != expectation,\
-            "expected %s != %s" % (self.context, expectation)
-
-    def __lt__(self, expectation):
-        assert self.context < expectation,\
-            "expected %s < %s" % (self.context, expectation)
-
-    def __le__(self, expectation):
-        assert self.context <= expectation,\
-            "expected %s <= %s" % (self.context, expectation)
-
-    def __gt__(self, expectation):
-        assert self.context > expectation,\
-            "expected %s > %s" % (self.context, expectation)
-
-    def __ge__(self, expectation):
-        assert self.context >= expectation,\
-            "expected %s >= %s" % (self.context, expectation)
-
-    def be(self, expectation):
-        assert self.context is expectation,\
-            "%s is not %s" % (self.context, expectation)
-
-    def not_be(self, expectation):
-        assert self.context is not expectation,\
-            "%s is %s" % (self.context, expectation)
-
-    @property
-    def be_true(self):
-        assert self.context.subject is True,\
-            "expected %s, given %s" % (True, self.context.subject)
-
-    @property
-    def be_false(self):
-        assert self.context.subject is False,\
-            "expected %s, given %s" % (False, self.context.subject)
-
-    @property
-    def be_none(self):
-        assert self.context.value is None,\
-            "expected %s, given %s" % (None, self.context.value)
-
-    def be_in(self, expectation):
-        assert self.context in expectation,\
-            "%s not in %s" % (self.context, expectation)
-
-    def not_be_in(self, expectation):
-        assert self.context not in expectation,\
-            "%s in %s" % (self.context, expectation)
-
-    def be_instanceof(self, expectation):
-        assert isinstance(self.context, expectation),\
-            "expected %s, given %s" % (expectation, type(self.context))
-
-    def not_be_instanceof(self, expectation):
-        assert not isinstance(self.context, expectation),\
-            "expected not %s, given %s" % (expectation, type(self.context))
-
-
 class Type(type):
     pass
 
 class Object:
-    Should = Should
-
-    @property
-    def should(self):
-        if not hasattr(self, '_should'):
-            self._should = self.Should(self)
-        return self._should
-
     @property
     def type(self):
         return type(self)
@@ -182,12 +77,6 @@ class ObjectAdapter(Object):
         atts.extend(object.__dict__.keys())
         atts = list(set(atts))
         return atts
-
-    @property
-    def should(self):
-        if not hasattr(self, '_should'):
-            self._should = self.Should(self._adaptee)
-        return self._should
 
     @property
     def type(self):
