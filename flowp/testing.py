@@ -4,6 +4,8 @@ import re
 import contextlib
 import inspect
 import sys
+from unittest import mock
+from collections import OrderedDict
 
 
 class BDDTestCase(type):
@@ -25,7 +27,9 @@ class BDDTestCase(type):
 
 
 class Behavior(unittest.TestCase, metaclass=BDDTestCase):
-    pass
+    @property
+    def _test_method(self):
+        return getattr(self, self._testMethodName) 
 
 
 class expect:
@@ -106,6 +110,17 @@ class expect:
         except self._expected_exception:
             pass 
 
+    @property
+    def called(self):
+        assert self._context.called 
+
+    @property
+    def not_called(self):
+        assert not self._context.called
+
+    def called_with(self, *args, **kwargs):
+        self._context.assert_called_with(*args, **kwargs) 
+
 
 def when(*context_methods):
     """Creates context for specyfic method from generator function.
@@ -162,6 +177,67 @@ def when(*context_methods):
     return func_consumer
 
 
+class ContextsTree:
+    """Tree structure used by TestSuite.addTests. From list of tests
+    create tree which is made by OrderedDict. In the tree it group the tests
+    by tests contexts, provided by 'when' decorator. Thanks to this, contexts
+    with tests can be printed in test results in groups, apart from the order
+    of used 'when' decorators in test case code.
+
+    Example of tree structure:
+    {
+        None: [func1, func2],
+        'ctx1': {
+            None: [func3, func4],
+            'ctx2': {None: [func5, func6]}
+        },
+        'ctx3': {None: [func6]}
+    }
+
+    Keys of dictionaries represents contexts, values subtree (another 
+    dictionaries) or leafs (lists). None keys represents tree leafs.
+    """
+    def __init__(self, test_cases):
+        self.structure = OrderedDict({None: []})
+        self.build_tree(test_cases)
+
+    def build_tree(self, test_cases):
+        for test_case in test_cases:
+            # if it's not test case (it's test suite)
+            if not hasattr(test_case, '_test_method'):
+                self.structure[None].append(test_case)
+                continue
+
+            if hasattr(test_case._test_method, 'contexts'):
+                subtree = self.structure
+                for context in test_case._test_method.contexts:
+                    if context not in subtree.keys():
+                        subtree[context] = OrderedDict({None: []})
+                    
+                    if context == test_case._test_method.contexts[-1]:
+                        subtree[context][None].append(test_case)
+                    else:
+                        subtree = subtree[context]
+            else:
+                self.structure[None].append(test_case)
+
+    def _get_list(self, subtree):
+        l = []
+        for key in subtree:
+            if key == None:
+                l.extend(subtree[key])
+            else:
+                l.extend(self._get_list(subtree[key]))
+        return l
+
+    @property
+    def list(self):
+        """Transform tree to the list and return it. Items in the list
+        are sorted by test contexts.
+        """
+        return self._get_list(self.structure) 
+
+
 class TextTestResult(unittest.TestResult):
     """Changes test results to more readable form. It's alternative
     to unittest.TextTestResult. Used by TextTestRunner.
@@ -180,6 +256,7 @@ class TextTestResult(unittest.TestResult):
         self.dots = verbosity == 1
         self.descriptions = descriptions
         self.analyzed_testcases = set()
+        self.analyzed_contexts = set()
 
     def _is_relevant_tb_level(self, tb):
         """Decide which frame in traceback will be shown at results, when
@@ -236,6 +313,12 @@ class TextTestResult(unittest.TestResult):
         traceback = "\n".join(traceback)
         return traceback
 
+    def _get_test_method_contexts(self, test):
+        """Return currently considered test method contexts."""
+        if hasattr(test._test_method, 'contexts'):
+            return test._test_method.contexts
+        return []
+
     def getDescription(self, test):
         """Get test name, it's method name from test case.
         Unlike oryginal method, it return name without test case name
@@ -247,15 +330,32 @@ class TextTestResult(unittest.TestResult):
         """Print test group name (test case) if test is first in it's group.
         Results are visible in verbose mode as headers at test results.
 
-        This assume that tests should be runned in order regarding to test case
-        groups.
+        This assume that tests should be runned in order regarding to the 
+        test case groups.
+
+        It also prints test contexts in groups.
         """
         super().startTest(test)
         if self.showAll:
+            # printing test case name as a header
             testcase_name = self._testcase_name(test)
             if testcase_name not in self.analyzed_testcases:
                 self.stream.writeln("\n%s:" % testcase_name)
                 self.analyzed_testcases.add(testcase_name)
+
+            # analyzing contexts names list of current test
+            contexts_path = [] 
+            for context in self._get_test_method_contexts(test):
+                contexts_path.append(context)
+                # print contexts names as headers
+                if tuple(contexts_path) not in self.analyzed_contexts:
+                    self.stream.write("\n" + '    ' * len(contexts_path))
+                    self.stream.writeln('when %s:' % context)
+                    self.analyzed_contexts.add(tuple(contexts_path))
+
+            # determining indent (regarding to contexts)
+            for context in self._get_test_method_contexts(test):
+                self.stream.write('   ')
 
             self.stream.flush()
 
@@ -338,11 +438,19 @@ class TextTestResult(unittest.TestResult):
             self.stream.writeln("%s" % self._format_traceback(err))
 
 
+class TestSuite(unittest.TestSuite):
+    def addTests(self, tests):
+        """Add sorted tests by contexts to the test suite"""
+        super().addTests(ContextsTree(tests).list) 
+
+
 class TestLoader(unittest.TestLoader):
     """Changes prefixes for test files and test methods. Test methods,
-    behaviors should start with 'it' and test files with 'spec'
+    behaviors should start with 'it' and test files with 'spec'. It also
+    changes suiteClass.
     """
     testMethodPrefix = 'it'
+    suiteClass = TestSuite
 
     def discover(self, start_dir, pattern='spec*.py', top_level_dir=None):
         # Force spec pattern
