@@ -152,7 +152,8 @@ def when(*context_methods):
                     return test_method(self, *args, **kwargs)
             elif not isinstance(context_method, str):
                 context_method(self)
-                return test_method(self, *args, **kwargs) 
+
+            return test_method(self, *args, **kwargs) 
 
         return new_test_method 
 
@@ -163,7 +164,12 @@ def when(*context_methods):
         if isinstance(context, str):
             name = context
         else:
-            name = context.__name__
+            # if context have annotations, create name from them
+            if hasattr(context, '__annotations__') and\
+                context.__annotations__.get('return'):
+                name = context.__annotations__.get('return') 
+            else:
+                name = context.__name__
 
         return name.replace('_', ' ')
 
@@ -203,7 +209,7 @@ class ContextsTree:
 
     def build_tree(self, test_cases):
         for test_case in test_cases:
-            # if it's not test case (it's test suite)
+            # if it's not test case (it's test suite), pass it
             if not hasattr(test_case, '_test_method'):
                 self.structure[None].append(test_case)
                 continue
@@ -340,7 +346,7 @@ class TextTestResult(unittest.TestResult):
             # printing test case name as a header
             testcase_name = self._testcase_name(test)
             if testcase_name not in self.analyzed_testcases:
-                self.stream.writeln("\n%s:" % testcase_name)
+                self.stream.writeln("\n\n%s:" % testcase_name)
                 self.analyzed_testcases.add(testcase_name)
 
             # analyzing contexts names list of current test

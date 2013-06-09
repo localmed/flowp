@@ -116,6 +116,9 @@ class WhenFunc(Behavior):
     def have_simple_context(self):
         self.bird = True
 
+    def have_context_with_annotation(self) -> 'annotation context':
+        pass
+
     @when(have_generator_context)
     def it_pass_data_from_generator_context_method(self):
         assert self.cat
@@ -156,6 +159,23 @@ class WhenFunc(Behavior):
             'have simple context']
         test_method = when('context1', 'context2')(test_method)
         assert test_method.contexts == ['context1', 'context2']
+
+    def it_set_context_name_from_annotation_of_context_method_if_given(self):
+        def test_method(s):
+            pass
+
+        test_method = \
+            when(self.have_simple_context, self.have_context_with_annotation)(test_method)
+        expect(test_method.contexts) == ['have simple context', 
+            'annotation context']
+
+    def it_executes_method_with_text_context(self):
+        def test_method(s):
+            raise AssertionError()
+
+        with self.assertRaises(AssertionError):
+            test_method = when('text context')(test_method) 
+            test_method(self)
 
 
 class ContextsTree(Behavior):
@@ -200,3 +220,121 @@ class ContextsTree(Behavior):
                 None: [self.m4]
             }
         }
+
+
+class TextTestResults(Behavior):
+    COLOR_GREEN = '\033[92m'
+    COLOR_END = '\033[0m'
+    
+    def executing_startTest_and_addSuccess(self) -> 'executing .startTest and .addSuccess':
+        class Method:
+            def __init__(self, name, contexts = None):
+                if contexts:
+                    self.contexts = contexts
+                self.name = name
+            
+            def __repr__(self):
+                return self.name
+
+        class TestCase:
+            def __init__(self, name, testcase_name, contexts = None):
+                self._test_method = Method(name, contexts)
+                self._testcase_name = testcase_name
+
+            def __repr__(self):
+                return self._test_method.name + ' (%s)' % self._testcase_name
+
+        class Stream:
+            def __init__(self):
+                self.data = ''
+
+            def write(self, data):
+                self.data += data 
+
+            def writeln(self, data):
+                self.write(data + "\n")
+
+            def flush(self):
+                pass
+
+        # representation of TestCases for single test method
+        self.m1 = TestCase('it_m1', 'tc1', ['ctx1'])
+        self.m2 = TestCase('it_m2', 'tc1')
+        self.m3 = TestCase('it_m3', 'tc1', ['ctx1', 'ctx2'])
+        self.m4 = TestCase('it_m4', 'tc1', ['ctx2'])
+        self.m5 = TestCase('it_m5', 'tc1', ['ctx1'])
+        self.m6 = TestCase('it_m6', 'tc1', ['ctx1', 'ctx2'])
+        self.m7 = TestCase('it_m7', 'tc1')
+        self.m8 = TestCase('it_m8', 'tc2')
+        self.results = testing.TextTestResult(Stream(), None, 2)
+
+    @when(executing_startTest_and_addSuccess)
+    def it_write_test_names_as_representation_of_single_tests(self):
+        expect(self.results.stream.data) == ''
+        self.results.startTest(self.m2)
+        self.results.addSuccess(self.m2)
+        self.results.startTest(self.m7)
+        self.results.addSuccess(self.m7)
+        s = "\n\ntc1:\n{green}    - m2 ... OK\n{end}{green}    - m7 ... OK\n{end}"
+        expect(self.results.stream.data) == s.format(
+            green=self.COLOR_GREEN,
+            end=self.COLOR_END
+        )
+
+    @when(executing_startTest_and_addSuccess)
+    def it_write_test_case_names_as_main_groups(self):
+        expect(self.results.stream.data) == ''
+        self.results.startTest(self.m2)
+        self.results.addSuccess(self.m2)
+        self.results.startTest(self.m7)
+        self.results.addSuccess(self.m7)
+        self.results.startTest(self.m8)
+        self.results.addSuccess(self.m8)
+        s = "\n\ntc1:\n{green}    - m2 ... OK\n{end}{green}    - m7 ... OK\n{end}"
+        s += "\n\ntc2:\n{green}    - m8 ... OK\n{end}"
+        expect(self.results.stream.data) == s.format(
+            green=self.COLOR_GREEN,
+            end=self.COLOR_END
+        )
+
+    @when(executing_startTest_and_addSuccess)
+    def it_write_test_context_names_as_test_case_subgroups(self):
+        expect(self.results.stream.data) == ''
+        # without context
+        self.results.startTest(self.m2)
+        self.results.addSuccess(self.m2)
+        self.results.startTest(self.m7)
+        self.results.addSuccess(self.m7)
+        # only ctx1 context
+        self.results.startTest(self.m1)
+        self.results.addSuccess(self.m1)
+        self.results.startTest(self.m5)
+        self.results.addSuccess(self.m5)
+        # ctx1 and ctx2 context
+        self.results.startTest(self.m3)
+        self.results.addSuccess(self.m3)
+        self.results.startTest(self.m6)
+        self.results.addSuccess(self.m6)
+        # only ctx2 context
+        self.results.startTest(self.m4)
+        self.results.addSuccess(self.m4)
+
+        s = "\n\ntc1:\n"
+        s += "{green}    - m2 ... OK\n{end}"
+        s += "{green}    - m7 ... OK\n{end}"
+        s += "\n"
+        s += "    when ctx1:\n"
+        s += "   {green}    - m1 ... OK\n{end}"
+        s += "   {green}    - m5 ... OK\n{end}"
+        s += "\n"
+        s += "        when ctx2:\n"
+        s += "      {green}    - m3 ... OK\n{end}"
+        s += "      {green}    - m6 ... OK\n{end}"
+        s += "\n"
+        s += "    when ctx2:\n"
+        s += "   {green}    - m4 ... OK\n{end}"
+
+        expect(self.results.stream.data) == s.format(
+            green=self.COLOR_GREEN,
+            end=self.COLOR_END
+        )
