@@ -121,7 +121,12 @@ class TypeAdapter(ObjectAdapter):
 
 ############## CONVERTERS ##############
 
-class Iterable(Object):
+class Container(Object):
+    """It diffs from collections.abc.Container in that it have characterictic of
+    collections.abc.Container, collections.abc.Iterable and 
+    collections.abc.Sized. Similar to collections.abc.Sequence, but order of 
+    items is not important. It is base for List, Tuple, Str, Set. 
+    """
     @property
     def len(self):
         return len(self)
@@ -217,7 +222,7 @@ class Iterable(Object):
         return self.type([item for item in self if re.search(pattern, str(item))]) 
 
 
-class List(list, Iterable):
+class List(list, Container):
     @property
     def reversed(self):
         lst = self[:]
@@ -229,18 +234,18 @@ class List(list, Iterable):
         return Dict(self)
 
 
-class Tuple(tuple, Iterable):
+class Tuple(tuple, Container):
     @property
     def dict(self):
         return Dict(self)
 
 
-class Set(set, Iterable):
+class Set(set, Container):
     def map(self, func):
         return Set(super().map(func))
 
 
-class Str(str, Iterable):
+class Str(str, Container):
     @property
     def int(self):
         return Int(self)

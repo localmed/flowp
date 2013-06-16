@@ -226,7 +226,7 @@ class TextTestResults(Behavior):
     COLOR_GREEN = '\033[92m'
     COLOR_END = '\033[0m'
     
-    def executing_startTest_and_addSuccess(self) -> 'executing .startTest and .addSuccess':
+    def executes_startTest_and_addSuccess(self) -> 'executes .startTest and .addSuccess':
         class Method:
             def __init__(self, name, contexts = None):
                 if contexts:
@@ -268,7 +268,7 @@ class TextTestResults(Behavior):
         self.m8 = TestCase('it_m8', 'tc2')
         self.results = testing.TextTestResult(Stream(), None, 2)
 
-    @when(executing_startTest_and_addSuccess)
+    @when(executes_startTest_and_addSuccess)
     def it_write_test_names_as_representation_of_single_tests(self):
         expect(self.results.stream.data) == ''
         self.results.startTest(self.m2)
@@ -281,7 +281,7 @@ class TextTestResults(Behavior):
             end=self.COLOR_END
         )
 
-    @when(executing_startTest_and_addSuccess)
+    @when(executes_startTest_and_addSuccess)
     def it_write_test_case_names_as_main_groups(self):
         expect(self.results.stream.data) == ''
         self.results.startTest(self.m2)
@@ -297,7 +297,7 @@ class TextTestResults(Behavior):
             end=self.COLOR_END
         )
 
-    @when(executing_startTest_and_addSuccess)
+    @when(executes_startTest_and_addSuccess)
     def it_write_test_context_names_as_test_case_subgroups(self):
         expect(self.results.stream.data) == ''
         # without context

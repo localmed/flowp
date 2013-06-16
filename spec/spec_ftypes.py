@@ -212,11 +212,11 @@ class FunctionAdapter(Behavior):
 
 ############## CONVERTERS ##############
 
-class Iterable(Behavior):
-    class Tuple(tuple, ftypes.Iterable):
+class Container(Behavior):
+    class Tuple(tuple, ftypes.Container):
         pass
 
-    class List(list, ftypes.Iterable):
+    class List(list, ftypes.Container):
         pass
 
     def before_each(self):
