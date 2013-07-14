@@ -6,8 +6,8 @@ import re
 ################# CORE #################
 
 def this(obj):
-    """Convert given object to the flowp type object with type which is consistent 
-    with flowp types.
+    """Basic type converter. Convert given object to the flowp type object 
+    with type which is consistent with flowp types.
     Examples:
 
         class SomeClass:

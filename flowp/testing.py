@@ -29,6 +29,7 @@ class BDDTestCase(type):
 class Behavior(unittest.TestCase, metaclass=BDDTestCase):
     @property
     def _test_method(self):
+        """Return object of (current) test method."""
         return getattr(self, self._testMethodName) 
 
 
@@ -208,22 +209,34 @@ class ContextsTree:
         self.build_tree(test_cases)
 
     def build_tree(self, test_cases):
+        """Build tree by given test cases sequence and tests contexts.
+        :param test_cases:
+            Sequence of flowp.testing.Behavior instances (test cases).
+            Each test case represents environment of single test method.
+        """
         for test_case in test_cases:
             # if it's not test case (it's test suite), pass it
             if not hasattr(test_case, '_test_method'):
                 self.structure[None].append(test_case)
                 continue
 
+            # if test method have 'when' contexts
             if hasattr(test_case._test_method, 'contexts'):
                 subtree = self.structure
                 for context in test_case._test_method.contexts:
+                    # if context not found in subtree, make a node of this ctx
                     if context not in subtree.keys():
                         subtree[context] = OrderedDict({None: []})
                     
+                    # if context is last at the list, set test to it
                     if context == test_case._test_method.contexts[-1]:
                         subtree[context][None].append(test_case)
+
+                    # if not, enter to subtree of this context
                     else:
                         subtree = subtree[context]
+
+            # if test method doesn't have 'when' contexts (regular test)
             else:
                 self.structure[None].append(test_case)
 
