@@ -1,5 +1,5 @@
             Flowp
-    ~ More fun with Python ~
+    ~ Bringing best ideas from Ruby world to Python ~
 
 
 What is flowp ?
@@ -9,12 +9,6 @@ with Python more enjoyable and productive.
 
 For now flowp contains:
 
-    - flowp.ftypes - better data structures / types processing
-    - flowp.testing - better testing framework (BDD, influenced by RSpec)
-
-
-Planned:
-
-    - flowp.system - better files / process manipulation
-    - flowp.build - (fluid) python building system
-    - flowp.dsl - support for macros, very easy dsl (languages) creating
+    - flowp.testing - better testing framework (BDD, influenced by RSpec) [ready to use]
+    - flowp.ftypes - better data structures / types processing / methods chains
+    - flowp.system - better files / process manipulation / building system
