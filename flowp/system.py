@@ -3,6 +3,7 @@ import subprocess
 import os
 import shutil
 import subprocess
+import sys
 
 
 class Process(ftypes.Object):
@@ -108,24 +109,38 @@ def sh(command):
 import_alias = __import__
 
 
-class FlowpFileExecuter(ftypes.Object):
-    def __init__(self, args):
-        self.args = args
+
+class Script(ftypes.Object):
+    @classmethod
+    def parse(cls):
+        try:
+            tasksfile = import_alias('tasksfile', globals(), locals(), [], -1) 
+        except ImportError:
+            script = cls(sys.argv)
+        else:
+            class FinalScript(cls, tasksfile.TasksFile):
+                pass
+            script = FinalScript(sys.argv)
+
+        script.execute_tasks()
+        return script
+
+    def __init__(self, argv):
+        self.argv = argv
 
     @property
-    def tasks(self):
+    def args(self):
         def func(item):
             if item.len == 1:
                 return [item[0], []]
             else:
                 return [item[0], item[1].split(',')]
 
-        tasks = ftypes.List(self.args[1:])
-        tasks.map_it(lambda x: x.split(':'))
-        tasks.map_it(func)
-        return tasks.dict
+        args = ftypes.List(self.argv)
+        args.map_it(lambda x: x.split(':'))
+        args.map_it(func)
+        return args.dict
 
-    def execute(self):
-        flowpfile = import_alias('flowpfile', globals(), locals(), [], -1) 
-        for task, args in self.tasks.items():
-            getattr(flowpfile, task)(*args) 
+    def execute_tasks(self):
+        for task, args in self.args.items():
+            self.getattr(task)(*args) 

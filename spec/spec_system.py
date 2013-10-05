@@ -1,4 +1,4 @@
-from flowp.testing import Behavior
+from flowp.testing import Behavior, when, expect
 from flowp import system
 from unittest import mock
 import os
@@ -94,34 +94,97 @@ class FileUtils(Behavior):
         subpr_mock.assert_called_once_with('test shell command', shell=True)
 
 
-class FlowpFileExecuter(Behavior):
-    def before_each(self):
-        self.args1 = ['script', 'task1', 'task2']
-        self.args2 = ['script', 'task1:abc', 'task2']
-        self.args3 = ['script', 'task1', 'task2:ab,cd']
-        self.E = system.FlowpFileExecuter
+class Script(Behavior):
+    def executes_parse(self):
+        p1 = mock.patch('sys.argv', new=['task1', 'task2'])
+        p2 = mock.patch('flowp.system.import_alias')
+        p1.start()
+        self.im_mock = p2.start()
+        self.im_mock.side_effect = ImportError()
+        yield
+        p1.stop()
+        p2.stop()
 
-    def it_parse_script_arguments_as_tasks_list_with_arguments(self):
-        assert self.E(self.args1).tasks == {'task1': [], 'task2': []}
-        assert self.E(self.args2).tasks == {'task1': ['abc'], 'task2': []}
-        assert self.E(self.args3).tasks == {'task1': [], 'task2': ['ab', 'cd']}
+    def mocked_tasks_execution(self):
+        p = mock.patch('flowp.system.Script.execute_tasks')
+        self.exc_mock = p.start()
+        yield
+        p.stop()
 
-    @mock.patch('flowp.system.import_alias')
-    def it_executes_tasks_from_flowpfile_by_given_script_arguments(self, im_mock):
-        flowpfile_mock = mock.MagicMock()
-        im_mock.return_value = flowpfile_mock
+    @when(executes_parse, mocked_tasks_execution)
+    def it_create_script_object_with_script_arguments(self):
+        script = system.Script.parse()
+        expect(script.argv) == ['task1', 'task2']
 
-        self.E(self.args1).execute()
-        assert im_mock.call_args[0][0] == 'flowpfile'
-        flowpfile_mock.task1.assert_called_with()
-        flowpfile_mock.task2.assert_called_with()
+    @when(executes_parse, mocked_tasks_execution)
+    def it_pass_tasksfile_import_if_not_founded(self):
+        system.Script.parse()
 
-        flowpfile_mock.reset_mock()
-        self.E(self.args2).execute()
-        flowpfile_mock.task1.assert_called_with('abc')
-        flowpfile_mock.task2.assert_called_with()
+    @when(executes_parse)
+    def it_use_tasksfile_as_a_mixin_to_new_script_object(self):
+        self.im_mock.side_effect = None
+        class TestScript(system.Script):
+            t1 = None
+            def task1(self):
+                super().task1()
+                self.t1 = True
 
-        flowpfile_mock.reset_mock()
-        self.E(self.args3).execute()
-        flowpfile_mock.task1.assert_called_with()
-        flowpfile_mock.task2.assert_called_with('ab', 'cd')
+        class TasksFile:
+            t1b = None
+            t2 = None
+            def task1(self):
+                self.t1b = True
+
+            def task2(self):
+                self.t2 = True
+
+        tasksfile_mock = mock.MagicMock()
+        tasksfile_mock.TasksFile = TasksFile
+        self.im_mock.return_value = tasksfile_mock
+
+        script = TestScript(['task1', 'task2']).parse()
+
+        expect(self.im_mock.call_args[0][0]) == 'tasksfile'
+        expect(script.t1).ok
+        expect(script.t1b).ok
+        expect(script.t2).ok
+   
+    @when(executes_parse, mocked_tasks_execution)
+    def it_execute_tasks(self):
+        expect(self.exc_mock).not_called
+        script = system.Script.parse()
+        expect(self.exc_mock).called
+
+    def it_parse_given_arguments_to_tree_structure(self):
+        expect(system.Script(['task1', 'task2']).args) == \
+            {'task1': [], 'task2': []}
+        expect(system.Script(['task1:abc', 'task2']).args) == \
+            {'task1': ['abc'], 'task2': []}
+        expect(system.Script(['task1', 'task2:ab,cd']).args) == \
+            {'task1': [], 'task2': ['ab', 'cd']}
+
+    def it_executes_given_tasks_from_script(self):
+        class TestScript(system.Script):
+            t1 = None
+            t2 = None
+            def task1(self):
+                self.t1 = True
+
+            def task2(self, a, b):
+                self.t2 = [a,b] 
+
+        script = TestScript(['task1', 'task2:1,2'])
+        script.execute_tasks()
+        expect(script.t1).ok
+        expect(script.t2) == ['1','2']
+        
+
+
+class SetupScript(Behavior):
+    pass
+
+class Task(Behavior):
+    pass
+
+class SetupTask(Behavior):
+    pass
