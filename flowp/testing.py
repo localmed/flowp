@@ -268,6 +268,7 @@ class TextTestResult(unittest.TestResult):
     COLOR_END = '\033[0m'
     COLOR_BLUE = '\033[94m'
 
+
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream, descriptions, verbosity)
         self.stream = stream
@@ -343,7 +344,10 @@ class TextTestResult(unittest.TestResult):
         Unlike oryginal method, it return name without test case name
         at the end and with replaced underscores to <space>.
         """
-        return str(test).split()[0].replace('_', ' ')[3:]
+        if type(test).__name__ == 'ModuleImportFailure':
+            return str(test).split()[0]
+        else: 
+            return str(test).split()[0].replace('_', ' ')[3:]
 
     def startTest(self, test):
         """Print test group name (test case) if test is first in it's group.
@@ -362,19 +366,20 @@ class TextTestResult(unittest.TestResult):
                 self.stream.writeln("\n\n%s:" % testcase_name)
                 self.analyzed_testcases.add(testcase_name)
 
-            # analyzing contexts names list of current test
-            contexts_path = [] 
-            for context in self._get_test_method_contexts(test):
-                contexts_path.append(context)
-                # print contexts names as headers
-                if tuple(contexts_path) not in self.analyzed_contexts:
-                    self.stream.write("\n" + '    ' * len(contexts_path))
-                    self.stream.writeln('when %s:' % context)
-                    self.analyzed_contexts.add(tuple(contexts_path))
+            if not type(test).__name__ == 'ModuleImportFailure':
+                # analyzing contexts names list of current test
+                contexts_path = [] 
+                for context in self._get_test_method_contexts(test):
+                    contexts_path.append(context)
+                    # print contexts names as headers
+                    if tuple(contexts_path) not in self.analyzed_contexts:
+                        self.stream.write("\n" + '    ' * len(contexts_path))
+                        self.stream.writeln('when %s:' % context)
+                        self.analyzed_contexts.add(tuple(contexts_path))
 
-            # determining indent (regarding to contexts)
-            for context in self._get_test_method_contexts(test):
-                self.stream.write('   ')
+                # determining indent (regarding to contexts)
+                for context in self._get_test_method_contexts(test):
+                    self.stream.write('   ')
 
             self.stream.flush()
 

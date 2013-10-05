@@ -176,6 +176,14 @@ class WhenFunc(Behavior):
         with self.assertRaises(AssertionError):
             test_method = when('text context')(test_method) 
             test_method(self)
+    
+    def it_works_with_mock_decorators(self):
+        def test_method(s, mock):
+            raise AssertionError()
+
+        with self.assertRaises(AssertionError):
+            test_method = when('text context')(mock.patch('sys.argv')(test_method))
+            test_method(self)
 
 
 class ContextsTree(Behavior):
@@ -223,8 +231,9 @@ class ContextsTree(Behavior):
 
 
 class TextTestResults(Behavior):
-    COLOR_GREEN = '\033[92m'
-    COLOR_END = '\033[0m'
+    COLOR_GREEN = testing.TextTestResult.COLOR_GREEN
+    COLOR_END = testing.TextTestResult.COLOR_END
+    COLOR_RED = testing.TextTestResult.COLOR_RED
     
     def executes_startTest_and_addSuccess(self) -> 'executes .startTest and .addSuccess':
         class Method:
@@ -251,7 +260,7 @@ class TextTestResults(Behavior):
             def write(self, data):
                 self.data += data 
 
-            def writeln(self, data):
+            def writeln(self, data=''):
                 self.write(data + "\n")
 
             def flush(self):
@@ -337,4 +346,38 @@ class TextTestResults(Behavior):
         expect(self.results.stream.data) == s.format(
             green=self.COLOR_GREEN,
             end=self.COLOR_END
+        )
+
+    @when(executes_startTest_and_addSuccess)
+    def it_handle_module_import_error(self):
+        class ModuleImportFailure:
+            def __repr__(self):
+                return "spec.spec_testing (TestCaseName)"
+
+        error_test = ModuleImportFailure()
+        self.results.startTest(error_test)
+        # simulating addError method
+        self.results.stream.write(self.COLOR_RED)
+        self.results.stream.write(self.results._formatted_description(error_test))
+        self.results.stream.writeln("ERROR")
+        self.results.stream.write(self.COLOR_END)
+        #
+        self.results.printErrorList('ERROR', [(error_test, '')])
+
+        s = "\n\nTestCaseName:\n"
+        s += "{red}    - spec.spec_testing ... ERROR\n{end}"
+        s += "-" * 70 + "\n\n"
+        s += "{red}ERROR: \"spec.spec_testing\" [TestCaseName]\n{end}\n\n"
+        
+#        s = s.replace("\n", '[N]')
+        self.results.stream.data = \
+            self.results.stream.data.replace(self.COLOR_RED, '[R]')
+        self.results.stream.data = \
+            self.results.stream.data.replace(self.COLOR_END, '[E]')
+#        self.results.stream.data = \
+#            self.results.stream.data.replace("\n", '[N]')
+
+        expect(self.results.stream.data) == s.format(
+            red='[R]',
+            end='[E]'
         )
