@@ -1,46 +1,86 @@
 from unittest import mock
 from flowp import ftypes
-from flowp.testing import Behavior
+from flowp.testing import Behavior, expect
 import types
 
 
 ################# CORE #################
 
+class Ftypes(Behavior):
+    def it_have_object_interface(self):
+        ftypes.Object.type
+        ftypes.Object.iscallable
+        ftypes.Object.isinstance
+        ftypes.Object.hasattr
+        ftypes.Object.getattr
+        ftypes.Object.dir
+        ftypes.Object.clone
+
+    def it_have_container_interface(self):
+        ftypes.Container.len
+        ftypes.Container.all
+        ftypes.Container.any
+        ftypes.Container.min
+        ftypes.Container.max
+        ftypes.Container.sum
+        ftypes.Container.map
+        ftypes.Container.map_it
+        ftypes.Container.filter
+        ftypes.Container.filter_it
+        ftypes.Container.reduce
+        ftypes.Container.join
+        ftypes.Container.set
+        ftypes.Container.uniq 
+        ftypes.Container.flatten
+        ftypes.Container.replace
+        ftypes.Container.grep
+
+
+
+
 class Object(Behavior):
-    class SomeClass(ftypes.Object):
-        x = 1
+    Subject = ftypes.Object
 
     def before_each(self):
-        self.object = ftypes.Object()
+        class SubjectWrapper(self.Subject):
+            x = 1
+
+        self.SubjectWrapper = SubjectWrapper
+
+    def it_have_basic_interface(self):
+        self.Subject.type
+        self.Subject.iscallable
+        self.Subject.isinstance
+        self.Subject.hasattr
+        self.Subject.getattr
+        self.Subject.dir
 
     def it_have_type_property(self):
-        assert self.object.type is ftypes.Object
-        assert self.object.type is not object
+        expect(self.Subject().type).be(self.Subject)
+        expect(self.Subject().type).not_be(object)
 
     def it_have_iscallable_property(self):
-        class Callable(ftypes.Object):
+        class Callable(self.Subject):
             def __call__(self):
                 return True
 
-        assert not self.object.iscallable
-        assert Callable().iscallable
+        expect(self.Subject().iscallable).not_ok
+        expect(Callable().iscallable).ok
 
     def it_have_isinstance_method(self):
-        assert self.object.isinstance(ftypes.Object)
+        expect(self.Subject().isinstance(self.Subject))
 
     def it_have_hasattr_method(self):
-        ob = self.SomeClass()
-        assert ob.hasattr('x')
-        assert not ob.hasattr('y')
+        expect(self.SubjectWrapper().hasattr('x')).ok
+        expect(self.SubjectWrapper().hasattr('y')).not_ok
 
     def it_have_getattr_method(self):
-        ob = self.SomeClass()
-        assert ob.getattr('x') == 1
+        expect(self.SubjectWrapper().getattr('x')) == 1
     
     def it_have_dir_property(self):
-        obj = self.SomeClass()
-        assert obj.dir == dir(obj)
-        assert 'x' in obj.dir
+        subject = self.SubjectWrapper()
+        expect(subject.dir) == dir(subject)
+        expect('x').be_in(subject.dir)
 
 
 class ThisMethod(Behavior):
@@ -220,6 +260,11 @@ class Container(Behavior):
         pass
 
     def before_each(self):
+        class List(list, ftypes.Container):
+            pass
+
+        self.Subject = List
+        self.subject = self.Subject([2,1,3])
         self.tuple1 = self.Tuple((1, 2, 3))
         self.tuple2 = self.Tuple((True, True, True))
         self.tuple3 = self.Tuple((True, False, True))
@@ -227,32 +272,31 @@ class Container(Behavior):
         self.list = self.List([1,2,3])
 
     def it_have_len_property(self):
-        assert self.tuple1.len == 3
+        expect(self.Subject([1,2,3]).len) == 3
 
     def it_have_all_any_property(self):
-        assert self.tuple2.all
-        assert not self.tuple3.all
-        assert self.tuple2.any
-        assert self.tuple3.any
-        assert not self.tuple4.any
+        expect(self.Subject([True, True, True]).all).ok
+        expect(self.Subject([True, False, True]).all).not_ok
+        expect(self.Subject([True, False]).any).ok
+        expect(self.Subject([False, False]).any).not_ok
 
     def it_have_min_max_properties(self):
-        assert self.tuple1.min == 1
-        assert self.tuple1.max == 3
+        expect(self.subject.min) == 1
+        expect(self.subject.max) == 3
 
     def it_have_sum_property(self):
-        assert self.tuple1.sum == 6
+        expect(self.subject.sum) == 6
 
     def it_have_map_filter_reduce_methods(self):
-        self.tuple1.map(lambda x: 2*x) == self.Tuple((2, 4, 6))
-        self.tuple1.filter(lambda x: x in (1, 3)) == self.Tuple((1, 3))
-        self.tuple1.reduce(lambda a, b: a*b) == 6
+        expect(self.subject.map(lambda x: 2*x)) == self.Subject([4,2,6])
+        expect(self.subject.filter(lambda x: x in (1,3))) == self.Subject([1,3])
+        expect(self.subject.reduce(lambda a,b: a*b)) == 6
 
     def it_have_map_filter_destructive_methods(self):
-        self.list.map_it(lambda x: x*2)
-        assert self.list == [2,4,6] 
-        self.list.filter_it(lambda x: x != 4)
-        assert self.list == [2,6]
+        self.subject.map_it(lambda x: x*2)
+        expect(self.subject) == self.Subject([4,2,6])
+        self.subject.filter_it(lambda x: x != 4)
+        expect(self.subject) == self.Subject([2,6])
 
     def it_do_flatten_operation(self):
         assert self.List([[1,2],[3,4],[5,6]]).flatten == [1,2,3,4,5,6]
@@ -268,41 +312,38 @@ class Container(Behavior):
             (1,2,3,4,5,6,7,8,9,10,11)
     
     def it_do_uniq_operation(self):
-        l = self.List([1,1,2,3,2,4])
-        t = self.Tuple([1,1,2,3,2,4])
-        assert l.uniq == [1,2,3,4]
-        assert t.uniq == (1,2,3,4)
+        expect(self.Subject([1,1,2,3,2,4]).uniq) == self.Subject([1,2,3,4])
 
     def it_do_join_operation(self):
         class Obj:
             def __repr__(self):
                 return 'x'
- 
-        assert self.List(['a', 'b', 'c']).join('.') == 'a.b.c'
-        # it should join even not str elements
-        assert self.List(['a', 1, 'c']).join('.') == 'a.1.c'
-        assert self.List(['a', Obj(), 'c']).join('.') == 'a.x.c'
 
+        expect(self.Subject(['a', 'b', 'c']).join('.')) == 'a.b.c'
+        expect(self.Subject(['a', 1, 'c']).join('.')) == 'a.1.c'
+        expect(self.Subject(['a', Obj(), 'c']).join('.')) == 'a.x.c'
+ 
     def it_do_replace_operation(self):
         class Obj:
             pass
         obj = Obj()
-        t = self.Tuple((1, (1,2), obj))
-        assert self.tuple1.replace(2, 4) == (1,4,3)
-        assert self.Tuple(('a', 'b')).replace('b', 'c') == ('a', 'c')
-        assert t.replace((1,2), 'x') == (1, 'x', obj)
-        assert t.replace(obj, 3) == (1, (1,2), 3)
+        subject = self.Subject([1, [1,2], obj])
+        
+        expect(self.subject.replace(2, 4)) == self.Subject([4,1,3])
+        expect(self.Subject(['a', 'b']).replace('b', 'c')) == self.Subject(['a','c'])
+        expect(subject.replace([1,2], 'x')) == self.Subject([1,'x',obj])
+        expect(subject.replace(obj, 3)) == self.Subject([1, [1,2], 3])
 
     def it_do_grep_operation(self):
         class Ob:
             pass
-        t = self.Tuple((1, 'abck', 'hbook', 31))
-        t2 = self.Tuple(('a', [1,2], Ob(), 'bc'))
-        assert t.grep('b') == ('abck', 'hbook')
-        assert t.grep('^a') == ('abck',)
-        assert t.grep('1') == (1, 31)
-        assert t.grep(1) == (1, 31)
-        assert t2.grep([1,2]) == ([1,2],)
+        c1 = self.Subject([1, 'abck', 'hbook', 31])
+        c2 = self.Subject(['a', [1,2], Ob(), 'bc'])
+        expect(c1.grep('b')) == self.Subject(['abck', 'hbook'])
+        expect(c1.grep('^a')) == self.Subject(['abck'])
+        expect(c1.grep('1')) == self.Subject([1,31])
+        expect(c1.grep(1)) == self.Subject([1,31])
+        expect(c2.grep([1,2])) == self.Subject([[1,2]])
 
 
 class List(Behavior):

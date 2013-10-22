@@ -5,6 +5,140 @@ import os
 import shutil
 
 
+class SystemBehavior(Behavior):
+    def before_each(self):
+        self.org_working_dir = os.getcwd() 
+        if os.path.isdir('spec/tmp'):
+            shutil.rmtree('spec/tmp')
+        os.mkdir('spec/tmp')
+        os.chdir('spec/tmp')
+
+    def after_each(self):
+        os.chdir(self.org_working_dir) 
+        shutil.rmtree('spec/tmp')
+
+    def reset_working_directory(self):
+        os.chdir(self.org_working_dir + '/spec/tmp') 
+
+
+class FileUtilsInterface(Behavior):
+    def before_each(self):
+        self.Subject = system.FileUtilsInterface
+
+    def it_have_required_interface(self):
+        self.Subject._cp
+        self.Subject._mv
+        self.Subject._ln
+        self.Subject._rm
+
+
+class FileUtils(SystemBehavior):
+    def before_each(self):
+        self.Subject = system
+        super().before_each()
+
+    def it_have_required_interface(self):
+        self.Subject.cd
+        self.Subject.cp
+        self.Subject.mv
+        self.Subject.ln
+        self.Subject.pwd
+        self.Subject.rm
+        self.Subject.mkdir
+        self.Subject.rmdir
+        self.Subject.touch
+        self.Subject.chmod
+        self.Subject.chown
+
+    def it_have_cd_function_which_enter_to_directories(self):
+        os.mkdir('testdir')
+        assert os.getcwd().endswith('tmp')
+        system.cd('testdir')
+        assert os.getcwd().endswith('tmp/testdir')
+
+        # also act like a context manager
+        self.reset_working_directory()
+        assert os.getcwd().endswith('tmp')
+        with system.cd('testdir'):
+            assert os.getcwd().endswith('tmp/testdir')
+        assert os.getcwd().endswith('tmp') 
+
+    def it_have_mv_function_which_move_files(self):
+        os.mkdir('testdir') 
+        with open('testfile', 'w'):
+            assert os.path.isfile('testfile') 
+            assert not os.path.isfile('testdir/testfile') 
+            system.mv('testfile', 'testdir/testfile')
+            assert not os.path.isfile('testfile') 
+            assert os.path.isfile('testdir/testfile') 
+
+    def it_have_mkdir_function_which_creates_directory(self):
+        assert not os.path.isdir('testdir')
+        system.mkdir('testdir')
+        assert os.path.isdir('testdir')
+        assert not os.path.isdir('testdir/testdir2/testdir3')
+        system.mkdir('testdir/testdir2/testdir3')
+        assert os.path.isdir('testdir/testdir2/testdir3')
+
+    def it_have_rm_function_which_remove_files(self):
+        with open('testfile', 'w'):
+            assert os.path.isfile('testfile')
+            system.rm('testfile')
+            assert not os.path.isfile('testfile')
+
+    @mock.patch('subprocess.check_call')
+    def it_have_sh_function_which_executes_shell_command(self, subpr_mock):
+        system.sh('test shell command')
+        subpr_mock.assert_called_once_with('test shell command', shell=True)
+
+
+class Path(FileUtilsInterface):
+    def before_each(self):
+        self.Subject = system.Path
+
+    def it_have_required_interface(self):
+        super().it_have_required_interface()
+        self.Subject.is_directory
+        self.Subject.is_exist   
+        self.Subject.is_file
+        self.Subject.is_readable
+        self.Subject.is_writeable
+        self.Subject.is_executable
+        self.Subject.path
+        self.Subject.absolute_path
+
+
+class File(Path):
+    def before_each(self):
+        self.Subject = system.File
+
+    def it_have_required_interface(self):
+        super().it_have_required_interface()
+        self.Subject.read
+        self.Subject.readline
+        self.Subject.write
+        self.Subject.size
+
+
+class Directory(Path):
+    def before_each(self):
+        self.Subject = system.Directory
+
+    def it_have_required_interface(self):
+        super().it_have_required_interface()
+        self.Subject.entries 
+
+
+class Files(FileUtilsInterface):
+    def before_each(self):
+        self.Subject = system.Files
+
+    def it_have_required_interface(self):
+        super().it_have_required_interface()
+        self.Subject.paths
+        self.Subject.patterns
+
+
 class Process(Behavior):
     def before_each(self):
         self.p = system.Process('testproc')
@@ -38,60 +172,6 @@ class Process(Behavior):
         self.p.run()
         assert subpr_mock.called
         subpr_mock.assert_called_once_with(['testproc', '-a', '1', 'b'])
-
-
-class FileUtils(Behavior):
-    def before_each(self):
-        self.org_working_dir = os.getcwd() 
-        if os.path.isdir('spec/tmp'):
-            shutil.rmtree('spec/tmp')
-        os.mkdir('spec/tmp')
-        os.chdir('spec/tmp')
-
-    def after_each(self):
-        os.chdir(self.org_working_dir) 
-        shutil.rmtree('spec/tmp')
-
-    def it_have_cd_function_which_enter_to_directories(self):
-        os.mkdir('testdir')
-        assert os.getcwd().endswith('tmp')
-        system.cd('testdir')
-        assert os.getcwd().endswith('tmp/testdir')
-
-        # also act like a context manager
-        os.chdir(self.org_working_dir + '/spec/tmp')
-        assert os.getcwd().endswith('tmp')
-        with system.cd('testdir'):
-            assert os.getcwd().endswith('tmp/testdir')
-        assert os.getcwd().endswith('tmp') 
-
-    def it_have_mv_function_which_move_files(self):
-        os.mkdir('testdir') 
-        with open('testfile', 'w'):
-            assert os.path.isfile('testfile') 
-            assert not os.path.isfile('testdir/testfile') 
-            system.mv('testfile', 'testdir/testfile')
-            assert not os.path.isfile('testfile') 
-            assert os.path.isfile('testdir/testfile') 
-
-    def it_have_mkdir_function_which_creates_directory(self):
-        assert not os.path.isdir('testdir')
-        system.mkdir('testdir')
-        assert os.path.isdir('testdir')
-        assert not os.path.isdir('testdir/testdir2/testdir3')
-        system.mkdir('testdir/testdir2/testdir3')
-        assert os.path.isdir('testdir/testdir2/testdir3')
-
-    def it_have_rm_function_which_remove_files(self):
-        with open('testfile', 'w'):
-            assert os.path.isfile('testfile')
-            system.rm('testfile')
-            assert not os.path.isfile('testfile')
-
-    @mock.patch('subprocess.check_call')
-    def it_have_sh_function_which_executes_shell_command(self, subpr_mock):
-        system.sh('test shell command')
-        subpr_mock.assert_called_once_with('test shell command', shell=True)
 
 
 class Script(Behavior):
@@ -179,12 +259,13 @@ class Script(Behavior):
         expect(script.t2) == ['1','2']
         
 
-
 class SetupScript(Behavior):
     pass
 
+
 class Task(Behavior):
     pass
+
 
 class SetupTask(Behavior):
     pass

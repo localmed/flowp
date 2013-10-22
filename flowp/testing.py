@@ -16,10 +16,10 @@ class BDDTestCase(type):
         new_namespace = {}
         for key, value in namespace.items():
             if key == 'before_each':
-                key = 'setUp'
+                new_namespace['setUp'] = value
 
             if key == 'after_each':
-                key = 'tearDown'
+                new_namespace['tearDown'] = value
 
             new_namespace[key] = value
 

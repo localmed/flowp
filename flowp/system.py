@@ -6,6 +6,73 @@ import subprocess
 import sys
 
 
+class FileUtilsInterface(ftypes.Object):
+    def _cp(self):
+        pass
+    
+    def _mv(self):
+        pass
+
+    def _ln(self):
+        pass
+
+    def _rm(self):
+        pass
+
+
+class Path(FileUtilsInterface):
+    def is_directory(self):
+        pass
+
+    def is_exist(self):
+        pass
+
+    def is_file(self):
+        pass
+
+    def is_readable(self):
+        pass
+
+    def is_writeable(self):
+        pass
+
+    def is_executable(self):
+        pass
+
+    def path(self):
+        pass
+
+    def absolute_path(self):
+        pass
+
+
+class File(Path):
+    def read(self):
+        pass
+
+    def readline(self):
+        pass
+
+    def write(self):
+        pass
+
+    def size(self):
+        pass
+
+
+class Directory(Path):
+    def entries(self):
+        pass
+
+
+class Files(FileUtilsInterface):
+    def paths(self):
+        pass
+
+    def patterns(self):
+        pass
+
+
 class Process(ftypes.Object):
     """Manage structure of process / command
     Example:
@@ -104,10 +171,30 @@ def sh(command):
     """ 
     subprocess.check_call(command, shell=True)
 
+def cp():
+    pass
+
+def pwd():
+    pass
+
+def rmdir():
+    pass
+
+def touch():
+    pass
+
+def chmod():
+    pass
+
+def chown():
+    pass
+
+def ln():
+    pass
+
 
 # Import alias for better debugging / mocking
 import_alias = __import__
-
 
 
 class Script(ftypes.Object):
@@ -144,3 +231,6 @@ class Script(ftypes.Object):
     def execute_tasks(self):
         for task, args in self.args.items():
             self.getattr(task)(*args) 
+
+
+
