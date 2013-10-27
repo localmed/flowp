@@ -1,6 +1,6 @@
 from unittest import mock
 from flowp import ftypes
-from flowp.testing import Behavior, expect
+from flowp.testing import Behavior, expect, when
 import types
 
 
@@ -14,7 +14,7 @@ class Ftypes(Behavior):
         ftypes.Object.hasattr
         ftypes.Object.getattr
         ftypes.Object.dir
-        ftypes.Object.clone
+        #ftypes.Object.clone
 
     def it_have_container_interface(self):
         ftypes.Container.len
@@ -354,3 +354,49 @@ class List(Behavior):
 class Tuple(Behavior):
     def it_have_dict_property(self):
         assert ftypes.Tuple(((1,2), (3,4))).dict == {1:2, 3:4}
+
+########### OTHER STRUCTURES ###########
+
+class DependencyGraph(Behavior):
+    def before_each(self):
+        class V:
+            def __init__(self, name):
+                self.name = name
+
+            def __repr__(self):
+                return self.name
+
+        self.subject = ftypes.DependencyGraph()
+        self.a = V('a')
+        self.b = V('b')
+        self.c = V('c')
+        self.d = V('d')
+         
+    @when('executes list')
+    def it_return_sorted_dependency_sequence(self):
+        self.subject[self.b] = {self.d}
+        self.subject[self.a] = {self.b, self.c}
+        l = self.subject.list(self.a)
+        expect(l[-1]) == self.a
+        expect(l.index(self.b)) > l.index(self.d)
+        expect(l.len) == 4
+
+    @when('executes list')
+    def it_solves_dependency_cycle(self):
+        self.subject[self.c] = {self.a} 
+        self.subject[self.b] = {self.d}
+        self.subject[self.a] = {self.b, self.c}
+        l = self.subject.list(self.a)
+        expect(l[-1]) == self.a
+        expect(l.index(self.b)) > l.index(self.d)
+        expect(l.len) == 4
+
+    @when('executes list')
+    def it_return_uniq_objects(self):
+        self.subject[self.c] = {self.b} 
+        self.subject[self.a] = {self.b, self.c}
+        l = self.subject.list(self.a)
+        expect(l[-1]) == self.a
+        expect(l.index(self.c)) > l.index(self.b)
+        expect(l.len) == 3
+        
