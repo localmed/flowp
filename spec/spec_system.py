@@ -1,28 +1,14 @@
-from flowp.testing import Behavior, when, expect
+from flowp.testing import Behavior, when, expect, FileSystemBehavior
 from flowp import system
 from unittest import mock
 import os
 import shutil
+import tempfile
 
 
-class SystemBehavior(Behavior):
+class FileUtilsInterface(FileSystemBehavior):
     def before_each(self):
-        self.org_working_dir = os.getcwd() 
-        if os.path.isdir('spec/tmp'):
-            shutil.rmtree('spec/tmp')
-        os.mkdir('spec/tmp')
-        os.chdir('spec/tmp')
-
-    def after_each(self):
-        os.chdir(self.org_working_dir) 
-        shutil.rmtree('spec/tmp')
-
-    def reset_working_directory(self):
-        os.chdir(self.org_working_dir + '/spec/tmp') 
-
-
-class FileUtilsInterface(Behavior):
-    def before_each(self):
+        super().before_each()
         self.Subject = system.FileUtilsInterface
 
     def it_have_required_interface(self):
@@ -32,7 +18,7 @@ class FileUtilsInterface(Behavior):
         self.Subject._rm
 
 
-class FileUtils(SystemBehavior):
+class System(FileSystemBehavior):
     def before_each(self):
         self.Subject = system
         super().before_each()
@@ -50,50 +36,86 @@ class FileUtils(SystemBehavior):
         self.Subject.chmod
         self.Subject.chown
 
-    def it_have_cd_function_which_enter_to_directories(self):
+
+    @when('executes cp', 'path names given')
+    def it_delegates_call_to_shutil_copy(self):
+        with mock.patch('shutil.copy') as copy:
+            system.cp('path1', 'path2')
+            expect(copy).called_with('path1', 'path2')
+
+    @when('executes cp', 'fileutilsinterface given')
+    def it_uses_cp_interface_method(self):
+        path = mock.Mock(spec=['_cp'])
+        system.cp(path, 'string_path')
+        expect(path._cp).called_with('string_path')
+        system.cp('string_path2', path)
+        expect(path._cp).called_with('string_path2')
+
+    @when('executes mv', 'path names given')
+    def it_delegates_call_to_shutil_move(self):
+        with mock.patch('shutil.move') as move:
+            system.mv('path1', 'path2')
+            expect(move).called_with('path1', 'path2')
+
+    @when('executes mv', 'fileutilsinterface given')
+    def it_uses_mv_interface_method(self):
+        path = mock.Mock(spec=['_mv'])
+        system.mv(path, 'string_path')
+        expect(path._mv).called_with('string_path')
+        system.mv('string_path2', path)
+        expect(path._mv).called_with('string_path2')
+
+    @when('executes rm', 'path names given')
+    def it_delegates_call_to_osunlink(self):
+        with mock.patch('os.unlink') as rm:
+            system.rm('path1')
+            expect(rm).called_with('path1')
+
+    @when('executes rm', 'fileutilsinterface given')
+    def it_uses_rm_interface_method(self):
+        path = mock.Mock(spec=['_rm'])
+        system.rm(path)
+        expect(path._rm).called
+
+    def it_changes_working_directory(self):
         os.mkdir('testdir')
-        assert os.getcwd().endswith('tmp')
         system.cd('testdir')
-        assert os.getcwd().endswith('tmp/testdir')
+        expect(os.getcwd().endswith('testdir')).ok
 
         # also act like a context manager
-        self.reset_working_directory()
-        assert os.getcwd().endswith('tmp')
+        self.reset_cwd()
         with system.cd('testdir'):
-            assert os.getcwd().endswith('tmp/testdir')
-        assert os.getcwd().endswith('tmp') 
+            expect(os.getcwd().endswith('testdir')).ok
+        expect(os.getcwd().endswith('testdir')).not_ok
 
-    def it_have_mv_function_which_move_files(self):
-        os.mkdir('testdir') 
-        with open('testfile', 'w'):
-            assert os.path.isfile('testfile') 
-            assert not os.path.isfile('testdir/testfile') 
-            system.mv('testfile', 'testdir/testfile')
-            assert not os.path.isfile('testfile') 
-            assert os.path.isfile('testdir/testfile') 
+    def it_creates_empty_file(self):
+        expect(os.path.isfile('testfile')).not_ok
+        system.touch('testfile')
+        expect(os.path.isfile('testfile')).ok
 
-    def it_have_mkdir_function_which_creates_directory(self):
-        assert not os.path.isdir('testdir')
+    def it_creates_directories(self):
+        expect(os.path.isdir('testdir')).not_ok
         system.mkdir('testdir')
-        assert os.path.isdir('testdir')
-        assert not os.path.isdir('testdir/testdir2/testdir3')
+        expect(os.path.isdir('testdir')).ok
+        expect(os.path.isdir('testdir/testdir2/testdir3')).not_ok
         system.mkdir('testdir/testdir2/testdir3')
-        assert os.path.isdir('testdir/testdir2/testdir3')
+        expect(os.path.isdir('testdir/testdir2/testdir3')).ok
 
-    def it_have_rm_function_which_remove_files(self):
+    def it_moves_files(self):
         with open('testfile', 'w'):
-            assert os.path.isfile('testfile')
+            expect(os.path.isfile('testfile')).ok
             system.rm('testfile')
-            assert not os.path.isfile('testfile')
+            expect(os.path.isfile('testfile')).not_ok
 
     @mock.patch('subprocess.check_call')
-    def it_have_sh_function_which_executes_shell_command(self, subpr_mock):
+    def it_executes_shell_commands(self, subpr_mock):
         system.sh('test shell command')
-        subpr_mock.assert_called_once_with('test shell command', shell=True)
+        expect(subpr_mock).called_with('test shell command', shell=True)
 
 
 class Path(FileUtilsInterface):
     def before_each(self):
+        super().before_each()
         self.Subject = system.Path
 
     def it_have_required_interface(self):
@@ -107,9 +129,24 @@ class Path(FileUtilsInterface):
         self.Subject.path
         self.Subject.absolute_path
 
+    def it_checks_if_is_directory(self):
+        system.touch('tmpfile')
+        os.mkdir('tmpdir')
+        expect(self.Subject('tmpfile').is_directory()).not_ok
+        expect(self.Subject('tmpdir').is_directory()).ok
+
+    def it_checks_if_is_exist(self):
+        system.touch('tmpfile')
+        os.mkdir('tmpdir')
+        expect(self.Subject('tmpfile').is_exist()).ok
+        expect(self.Subject('tmpdir').is_exist()).ok
+        expect(self.Subject('ghost').is_exist()).not_ok
+
+
 
 class File(Path):
     def before_each(self):
+        super().before_each()
         self.Subject = system.File
 
     def it_have_required_interface(self):
@@ -122,6 +159,7 @@ class File(Path):
 
 class Directory(Path):
     def before_each(self):
+        super().before_each()
         self.Subject = system.Directory
 
     def it_have_required_interface(self):
@@ -131,12 +169,16 @@ class Directory(Path):
 
 class Files(FileUtilsInterface):
     def before_each(self):
+        super().before_each()
         self.Subject = system.Files
 
     def it_have_required_interface(self):
         super().it_have_required_interface()
         self.Subject.paths
         self.Subject.patterns
+
+    def it_extends_pathname_pattern_to_path_objects_collection(self):
+        self.fail()
 
 
 class Process(Behavior):
@@ -155,22 +197,22 @@ class Process(Behavior):
         self.p.arg('--test2', ['a', 'b'])
         self.p.arg('test3')
         self.p.arg('t4', 't5')
-        assert self.p.command == 'testproc --test1 1 --test2 a b test3 t4 t5'
+        expect(self.p.command) == 'testproc --test1 1 --test2 a b test3 t4 t5'
 
     def it_update_arguments_values_without_changing_args_order(self):
         self.p.arg('-a', 1)
         self.p.arg('-b', 2)
-        assert self.p.command == 'testproc -a 1 -b 2'
+        expect(self.p.command) == 'testproc -a 1 -b 2'
         self.p.arg('-a', 3)
-        assert self.p.command == 'testproc -a 3 -b 2'
+        expect(self.p.command) == 'testproc -a 3 -b 2'
 
     @mock.patch('subprocess.check_call')
     def it_run_process(self, subpr_mock):
         self.p.arg('-a', 1)
         self.p.arg('b')
-        assert not subpr_mock.called
+        expect(subpr_mock).not_called
         self.p.run()
-        assert subpr_mock.called
+        expect(subpr_mock).called
         subpr_mock.assert_called_once_with(['testproc', '-a', '1', 'b'])
 
 

@@ -21,11 +21,14 @@ class FileUtilsInterface(ftypes.Object):
 
 
 class Path(FileUtilsInterface):
+    def __init__(self, value):
+        self.value = value
+
     def is_directory(self):
-        pass
+        return os.path.isdir(self.value)
 
     def is_exist(self):
-        pass
+        return os.access(self.value, os.F_OK)
 
     def is_file(self):
         pass
@@ -154,15 +157,33 @@ class cd:
         os.chdir(self.org_dir)
 
 
-# Alias for shutil.move
-mv = shutil.move
-
 # Alias for os.mkdir
 mkdir = os.makedirs
 
-# Alias for os.unlink
-rm = os.unlink
 
+# Alias for copy
+def cp(src, dst):
+    if hasattr(src, '_cp'):
+        src._cp(dst)
+    elif hasattr(dst, '_cp'):
+        dst._cp(src)
+    else:
+        shutil.copy(src, dst)
+
+# Alias for move
+def mv(src, dst):
+    if hasattr(src, '_mv'):
+        src._mv(dst)
+    elif hasattr(dst, '_mv'):
+        dst._mv(src)
+    else:
+        shutil.move(src, dst)
+
+def rm(path):
+    if hasattr(path, '_rm'):
+        path._rm()
+    else:
+        os.unlink(path)
 
 def sh(command):
     """Executes shell command as is
@@ -171,17 +192,15 @@ def sh(command):
     """ 
     subprocess.check_call(command, shell=True)
 
-def cp():
-    pass
-
 def pwd():
     pass
 
 def rmdir():
     pass
 
-def touch():
-    pass
+def touch(filename):
+    with open(filename, 'w'):
+        pass
 
 def chmod():
     pass
