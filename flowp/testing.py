@@ -4,8 +4,10 @@ import re
 import contextlib
 import inspect
 import sys
+import os
 from unittest import mock
 from collections import OrderedDict
+import tempfile
 
 
 class BDDTestCase(type):
@@ -31,6 +33,23 @@ class Behavior(unittest.TestCase, metaclass=BDDTestCase):
     def _test_method(self):
         """Return object of (current) test method."""
         return getattr(self, self._testMethodName) 
+
+
+class FileSystemBehavior(Behavior):
+    """Test case with basic setup for filesystem testing. It creates
+    temporary directory and changes current working directory to it.
+    After each test, returns to primary 'cwd' and remove temporary directory.
+    """
+    def before_each(self):
+        self.tempdir = TemporaryDirectory()
+        self.tempdir.enter()
+
+    def after_each(self):
+        self.tempdir.exit()
+        self.tempdir.cleanup()
+
+    def reset_cwd(self):
+        os.chdir(self.tempdir.name)
 
 
 class expect:
@@ -491,6 +510,13 @@ class TextTestRunner(unittest.TextTestRunner):
     """Set custom flowp test result class"""
     resultclass = TextTestResult
 
+class TemporaryDirectory(tempfile.TemporaryDirectory):
+    def enter(self):
+        self.org_cwd = os.getcwd()
+        os.chdir(self.name)
+
+    def exit(self):
+        os.chdir(self.org_cwd)
 
 if __name__ == '__main__':
     unittest.main(module=None, testLoader=TestLoader(), testRunner=TextTestRunner)

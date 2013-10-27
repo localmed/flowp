@@ -1,6 +1,8 @@
 from flowp.testing import Behavior, when, expect
 from flowp import testing
 from unittest import mock
+import tempfile
+import os
 
 
 class Expect(Behavior):
@@ -381,3 +383,23 @@ class TextTestResults(Behavior):
             red='[R]',
             end='[E]'
         )
+
+
+class TemporaryDirectory(Behavior):
+    def before_each(self):
+        self.Subject = testing.TemporaryDirectory
+        self.subject = testing.TemporaryDirectory()
+
+    def after_each(self):
+        self.subject.cleanup()
+
+    def it_inherit_form_tempfile(self):
+        expect(issubclass(self.Subject, tempfile.TemporaryDirectory)).ok
+
+    def it_can_enter_and_exit_from_temporary_directory(self):
+        org_dir = os.getcwd()
+        expect(os.path.samefile(org_dir, self.subject.name)).not_ok
+        self.subject.enter()
+        expect(os.path.samefile(os.getcwd(), self.subject.name)).ok
+        self.subject.exit()
+        expect(os.path.samefile(os.getcwd(), org_dir)).ok
