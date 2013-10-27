@@ -319,7 +319,10 @@ class TextTestResult(unittest.TestResult):
             return ''
         # changes last line to blue color
         elif re.match(r'^  \S', line):
-            return self.COLOR_BLUE + line + self.COLOR_END
+            if self.dots:
+                return line
+            else:
+                return self.COLOR_BLUE + line + self.COLOR_END
         else:
             return line
 
@@ -455,9 +458,11 @@ class TextTestResult(unittest.TestResult):
             self.stream.writeln()
             place = '"%s" [%s]' % (self.getDescription(test), 
                 self._testcase_name(test))
-            self.stream.write(self.COLOR_RED)
+            if not self.dots:
+                self.stream.write(self.COLOR_RED)
             self.stream.writeln("%s: %s" % (flavour, place))
-            self.stream.write(self.COLOR_END)
+            if not self.dots:
+                self.stream.write(self.COLOR_END)
             self.stream.writeln()
             self.stream.writeln("%s" % self._format_traceback(err))
 
