@@ -177,9 +177,6 @@ class Files(FileUtilsInterface):
         self.Subject.paths
         self.Subject.patterns
 
-    def it_extends_pathname_pattern_to_path_objects_collection(self):
-        self.fail()
-
 
 class Process(Behavior):
     def before_each(self):
@@ -216,8 +213,31 @@ class Process(Behavior):
         subpr_mock.assert_called_once_with(['testproc', '-a', '1', 'b'])
 
 
-class Script(Behavior):
-    def executes_parse(self):
+class TermLogger(Behavior):
+    def before_each(self):
+        self.p1 = mock.patch('flowp.system.logging')
+        self.logger_mock = mock.Mock()
+        self.logging_mock = self.p1.start()
+        self.logging_mock.getLogger.return_value = self.logger_mock
+        self.logger = system.TermLogger()
+
+    def after_each(self):
+        self.p1.stop()
+        
+
+    def it_log_error_with_red_color(self):
+        self.logger.error('msg')
+        expect(self.logger_mock.error).called_with(system.TermLogger.RED + "msg" +
+            system.TermLogger.COLOR_END)
+
+    def it_log_info_with_regular_color(self):
+        self.logger.info('msg')
+        expect(self.logger_mock.info).called_with("msg")
+
+
+
+class TaskScript(Behavior):
+    def executes_create(self):
         p1 = mock.patch('sys.argv', new=['task1', 'task2'])
         p2 = mock.patch('flowp.system.import_alias')
         p1.start()
@@ -227,25 +247,16 @@ class Script(Behavior):
         p1.stop()
         p2.stop()
 
-    def mocked_tasks_execution(self):
-        p = mock.patch('flowp.system.Script.execute_tasks')
+    def mocked_execute_tasks_method(self):
+        p = mock.patch('flowp.system.TaskScript.execute_tasks')
         self.exc_mock = p.start()
         yield
         p.stop()
 
-    @when(executes_parse, mocked_tasks_execution)
-    def it_create_script_object_with_script_arguments(self):
-        script = system.Script.parse()
-        expect(script.argv) == ['task1', 'task2']
-
-    @when(executes_parse, mocked_tasks_execution)
-    def it_pass_tasksfile_import_if_not_founded(self):
-        system.Script.parse()
-
-    @when(executes_parse)
+    @when(executes_create)
     def it_use_tasksfile_as_a_mixin_to_new_script_object(self):
         self.im_mock.side_effect = None
-        class TestScript(system.Script):
+        class TestScript(system.TaskScript):
             t1 = None
             def task1(self):
                 super().task1()
@@ -264,29 +275,38 @@ class Script(Behavior):
         tasksfile_mock.TasksFile = TasksFile
         self.im_mock.return_value = tasksfile_mock
 
-        script = TestScript(['task1', 'task2']).parse()
+        script = TestScript(['task1', 'task2']).create()
 
         expect(self.im_mock.call_args[0][0]) == 'tasksfile'
         expect(script.t1).ok
         expect(script.t1b).ok
         expect(script.t2).ok
    
-    @when(executes_parse, mocked_tasks_execution)
+    @when(executes_create, mocked_execute_tasks_method)
+    def it_create_script_object_from_script_arguments(self):
+        script = system.TaskScript.create()
+        expect(script.argv) == ['task1', 'task2']
+
+    @when(executes_create, mocked_execute_tasks_method)
+    def it_ignore_importing_taskfile_if_not_founded(self):
+        system.TaskScript.create()
+
+    @when(executes_create, mocked_execute_tasks_method)
     def it_execute_tasks(self):
         expect(self.exc_mock).not_called
-        script = system.Script.parse()
+        script = system.TaskScript.create()
         expect(self.exc_mock).called
 
     def it_parse_given_arguments_to_tree_structure(self):
-        expect(system.Script(['task1', 'task2']).args) == \
+        expect(system.TaskScript(['task1', 'task2']).args) == \
             {'task1': [], 'task2': []}
-        expect(system.Script(['task1:abc', 'task2']).args) == \
+        expect(system.TaskScript(['task1:abc', 'task2']).args) == \
             {'task1': ['abc'], 'task2': []}
-        expect(system.Script(['task1', 'task2:ab,cd']).args) == \
+        expect(system.TaskScript(['task1', 'task2:ab,cd']).args) == \
             {'task1': [], 'task2': ['ab', 'cd']}
 
     def it_executes_given_tasks_from_script(self):
-        class TestScript(system.Script):
+        class TestScript(system.TaskScript):
             t1 = None
             t2 = None
             def task1(self):
@@ -300,14 +320,15 @@ class Script(Behavior):
         expect(script.t1).ok
         expect(script.t2) == ['1','2']
         
+    def it_log_executed_tasks(self):
+        class TaskScript(system.TaskScript):
+            def task1(self):
+                pass
+                
+            def task2(self):
+                pass 
 
-class SetupScript(Behavior):
-    pass
-
-
-class Task(Behavior):
-    pass
-
-
-class SetupTask(Behavior):
-    pass
+        logger_mock = mock.Mock(spec=system.TermLogger)
+        with mock.patch('flowp.system.TermLogger', new=mock.Mock(return_value=logger_mock)):
+            TaskScript(['task1']).execute_tasks()
+            expect(logger_mock.info).called_with("Executing task task1")

@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import sys
+import logging
 
 
 class FileUtilsInterface(ftypes.Object):
@@ -216,9 +217,30 @@ def ln():
 import_alias = __import__
 
 
-class Script(ftypes.Object):
+class TermLogger(ftypes.Object):
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    COLOR_END = '\033[0m'
+    
+    def __init__(self):
+        formatter = logging.Formatter('%(message)s')
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        self._logger = logging.getLogger()
+        self._logger.setLevel(logging.DEBUG)
+        self._logger.addHandler(handler)
+
+    def error(self, msg):
+        self._logger.error(self.RED + msg + self.COLOR_END)
+
+    def info(self, msg):
+        self._logger.info(msg)
+
+
+class TaskScript(ftypes.Object):
     @classmethod
-    def parse(cls):
+    def create(cls):
         try:
             tasksfile = import_alias('tasksfile', globals(), locals(), [], -1) 
         except ImportError:
@@ -233,6 +255,7 @@ class Script(ftypes.Object):
 
     def __init__(self, argv):
         self.argv = argv
+        self.logger = TermLogger()
 
     @property
     def args(self):
@@ -249,7 +272,5 @@ class Script(ftypes.Object):
 
     def execute_tasks(self):
         for task, args in self.args.items():
+            self.logger.info("Executing task %s" % task)
             self.getattr(task)(*args) 
-
-
-
