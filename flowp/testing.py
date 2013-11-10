@@ -7,6 +7,10 @@ from collections import OrderedDict
 import tempfile
 import time
 import sys
+from flowp.system import TermColors as colors
+import imp
+import glob
+import subprocess
 
 
 class BDDTestCase(type):
@@ -138,7 +142,7 @@ class expect:
         assert not self._context.called
 
     def called_with(self, *args, **kwargs):
-        self._context.assert_called_with(*args, **kwargs) 
+        self._context.assert_any_call(*args, **kwargs)
 
 
 def when(*context_methods):
@@ -502,12 +506,37 @@ class TestLoader(unittest.TestLoader):
     def discover(self, start_dir, pattern='spec*.py', top_level_dir=None):
         # Force spec pattern
         pattern = 'spec*.py'
-        return super().discover(start_dir, pattern, top_level_dir) 
+        return super().discover(start_dir, pattern, top_level_dir)
+
+
+class ColorWriteDecorator:
+    """Used to decorate file-like objects with a handy 'writeln' method"""
+    def __init__(self,stream):
+        self.stream = stream
+
+    def __getattr__(self, attr):
+        if attr in ('stream', '__getstate__'):
+            raise AttributeError(attr)
+        return getattr(self.stream,attr)
+
+    def write(self, arg):
+        if arg:
+            if arg=='OK':
+                self.stream.write(colors.GREEN + arg + colors.END)
+            elif arg=='FAILED':
+                self.stream.write(colors.RED + arg + colors.END)
+            else:
+                self.stream.write(arg)
 
 
 class TextTestRunner(unittest.TextTestRunner):
     """Set custom flowp test result class"""
     resultclass = TextTestResult
+
+    def __init__(self, stream=None, descriptions=True, verbosity=1, failfast=False, buffer=False, resultclass=None,
+                 warnings=None):
+        super().__init__(stream, descriptions, verbosity, failfast, buffer, resultclass, warnings)
+        self.stream = ColorWriteDecorator(self.stream)
 
 
 class TemporaryDirectory(tempfile.TemporaryDirectory):
@@ -520,21 +549,8 @@ class TemporaryDirectory(tempfile.TemporaryDirectory):
 
 
 class TestProgram(unittest.TestProgram):
-    def __init__(self, module='__main__', defaultTest=None, argv=None, testRunner=None,
-                 testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, failfast=None, catchbreak=None,
-                 buffer=None, warnings=None):
-        if argv is None:
-            argv = sys.argv
-        super().__init__(module, defaultTest, argv, testRunner, testLoader, exit, verbosity, failfast, catchbreak,
-                         buffer, warnings)
-        if hasattr(self, 'autorun') and self.autorun:
-            try:
-                while True:
-                    time.sleep(4)
-                    super().parseArgs(argv)
-                    super().runTests()
-            except KeyboardInterrupt:
-                pass
+    AUTORUN_TIME_INTERVAL = 4
+    RUN_MODULE = 'flowp.testing'
 
     def _getOptParser(self):
         parser = super()._getOptParser()
@@ -547,6 +563,32 @@ class TestProgram(unittest.TestProgram):
         if options.autorun:
             self.autorun = options.autorun
 
+    @classmethod
+    def create(cls, *args, **kwargs):
+        """When found autorun option, factory method run loop, where rerun
+        tests at some time interval.
+        """
+        program = cls(*args, **kwargs)
+
+        if hasattr(program, 'autorun') and program.autorun:
+            try:
+                if 'argv' in kwargs:
+                    argv = kwargs['argv']
+                else:
+                    argv = sys.argv
+                if '-a' in argv:
+                    argv.remove('-a')
+                if '--auto' in argv:
+                    argv.remove('--auto')
+                argv = [sys.executable, '-m', cls.RUN_MODULE] + argv[1:]
+
+                while True:
+                    time.sleep(cls.AUTORUN_TIME_INTERVAL)
+                    subprocess.call(argv)
+            except KeyboardInterrupt:
+                pass
+
 
 if __name__ == '__main__':
-    TestProgram(module=None, testLoader=TestLoader(), testRunner=TextTestRunner, exit=False)
+    TestProgram.create(module=None, testLoader=TestLoader(), testRunner=TextTestRunner,
+                       exit=False)

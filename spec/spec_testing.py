@@ -1,8 +1,11 @@
-from flowp.testing import Behavior, when, expect
+from flowp.testing import Behavior, when, expect, FileSystemBehavior
 from flowp import testing
+from flowp.system import TermColors as colors, touch, mkdir
 from unittest import mock
 import tempfile
 import os
+import importlib
+import sys
 
 
 class Expect(Behavior):
@@ -385,6 +388,24 @@ class TextTestResults(Behavior):
         )
 
 
+class TextTestRunner(Behavior):
+    def it_print_some_text_in_colors(self):
+        class Stream:
+            def __init__(self):
+                self.value = ''
+
+            def write(self, value):
+                self.value = value
+
+        subject = testing.TextTestRunner(stream=Stream())
+        subject.stream.write('FAILED')
+        expect(subject.stream.value) == colors.RED + 'FAILED' + colors.END
+        subject.stream.write('OK')
+        expect(subject.stream.value) == colors.GREEN + 'OK' + colors.END
+        subject.stream.write('test')
+        expect(subject.stream.value) == 'test'
+
+
 class TemporaryDirectory(Behavior):
     def before_each(self):
         self.Subject = testing.TemporaryDirectory
@@ -403,3 +424,26 @@ class TemporaryDirectory(Behavior):
         expect(os.path.samefile(os.getcwd(), self.subject.name)).ok
         self.subject.exit()
         expect(os.path.samefile(os.getcwd(), org_dir)).ok
+
+
+class TestProgram(Behavior):
+    def before_each(self):
+        self.Subject = testing.TestProgram
+
+    def given_autorun_flag(self):
+        self.kwargs = dict(argv=['test_script', '-a', 'test.testo'], exit=False,
+                           module=None, testLoader=mock.Mock(), testRunner=mock.Mock())
+
+    @when(given_autorun_flag)
+    def it_set_autorun_option(self):
+        subject = self.Subject(**self.kwargs)
+        expect(subject.autorun).ok
+
+    @when(given_autorun_flag)
+    def it_run_testprogram_in_loop(self):
+        with mock.patch('time.sleep'):
+            with mock.patch('subprocess.call') as call_mock:
+                call_mock.side_effect = KeyboardInterrupt()
+                self.Subject.create(**self.kwargs)
+                expect(call_mock).called_with([sys.executable, '-m',
+                                               self.Subject.RUN_MODULE, 'test.testo'])

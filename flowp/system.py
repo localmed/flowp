@@ -217,6 +217,12 @@ def ln():
 import_alias = __import__
 
 
+class TermColors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    END = '\033[0m'
+
+
 class TermLogger(ftypes.Object):
     GREEN = '\033[92m'
     RED = '\033[91m'
