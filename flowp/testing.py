@@ -1,13 +1,12 @@
 import unittest
-import unittest.main
 import re
 import contextlib
 import inspect
-import sys
 import os
-from unittest import mock
 from collections import OrderedDict
 import tempfile
+import time
+import sys
 
 
 class BDDTestCase(type):
@@ -510,6 +509,7 @@ class TextTestRunner(unittest.TextTestRunner):
     """Set custom flowp test result class"""
     resultclass = TextTestResult
 
+
 class TemporaryDirectory(tempfile.TemporaryDirectory):
     def enter(self):
         self.org_cwd = os.getcwd()
@@ -518,5 +518,35 @@ class TemporaryDirectory(tempfile.TemporaryDirectory):
     def exit(self):
         os.chdir(self.org_cwd)
 
+
+class TestProgram(unittest.TestProgram):
+    def __init__(self, module='__main__', defaultTest=None, argv=None, testRunner=None,
+                 testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, failfast=None, catchbreak=None,
+                 buffer=None, warnings=None):
+        if argv is None:
+            argv = sys.argv
+        super().__init__(module, defaultTest, argv, testRunner, testLoader, exit, verbosity, failfast, catchbreak,
+                         buffer, warnings)
+        if hasattr(self, 'autorun') and self.autorun:
+            try:
+                while True:
+                    time.sleep(4)
+                    super().parseArgs(argv)
+                    super().runTests()
+            except KeyboardInterrupt:
+                pass
+
+    def _getOptParser(self):
+        parser = super()._getOptParser()
+        parser.add_option('-a', '--auto', dest='autorun', default=False, help='Auto run',
+                          action='store_true')
+        return parser
+
+    def _setAttributesFromOptions(self, options):
+        super()._setAttributesFromOptions(options)
+        if options.autorun:
+            self.autorun = options.autorun
+
+
 if __name__ == '__main__':
-    unittest.main(module=None, testLoader=TestLoader(), testRunner=TextTestRunner)
+    TestProgram(module=None, testLoader=TestLoader(), testRunner=TextTestRunner, exit=False)
