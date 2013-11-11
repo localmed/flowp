@@ -2,7 +2,6 @@ from flowp import ftypes
 import subprocess
 import os
 import shutil
-import subprocess
 import sys
 import logging
 

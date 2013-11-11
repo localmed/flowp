@@ -2,8 +2,6 @@ from flowp.testing import Behavior, when, expect, FileSystemBehavior
 from flowp import system
 from unittest import mock
 import os
-import shutil
-import tempfile
 
 
 class FileUtilsInterface(FileSystemBehavior):
@@ -235,8 +233,16 @@ class TermLogger(Behavior):
         expect(self.logger_mock.info).called_with("msg")
 
 
-
 class TaskScript(Behavior):
+    def before_each(self):
+        self.logger_mock = mock.Mock(spec=system.TermLogger)
+        self.p1 = mock.patch('flowp.system.TermLogger',
+                             new=mock.Mock(return_value=self.logger_mock))
+        self.p1.start()
+
+    def after_each(self):
+        self.p1.stop()
+
     def executes_create(self):
         p1 = mock.patch('sys.argv', new=['task1', 'task2'])
         p2 = mock.patch('flowp.system.import_alias')
@@ -328,7 +334,5 @@ class TaskScript(Behavior):
             def task2(self):
                 pass 
 
-        logger_mock = mock.Mock(spec=system.TermLogger)
-        with mock.patch('flowp.system.TermLogger', new=mock.Mock(return_value=logger_mock)):
-            TaskScript(['task1']).execute_tasks()
-            expect(logger_mock.info).called_with("Executing task task1")
+        TaskScript(['task1']).execute_tasks()
+        expect(self.logger_mock.info).called_with("Executing task task1")
