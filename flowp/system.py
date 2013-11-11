@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import logging
+import inspect
 
 
 class FileUtilsInterface(ftypes.Object):
@@ -284,7 +285,35 @@ class TaskScript(ftypes.Object):
         args.map_it(func)
         return args.dict
 
+    def build_deps_graph(self):
+        methods = self.dir.grep('^[a-zA-Z0-9]').map(lambda name: self.getattr(name))
+        # filter method doesn't working, bug? needed for-loop for filtering
+        fl_methods = []
+        for method in methods:
+            if inspect.ismethod(method):
+                fl_methods.append(method)
+
+        deps_graph = ftypes.DependencyGraph()
+        for method in fl_methods:
+            if hasattr(method, 'require'):
+                deps_graph[method] = map(lambda m: getattr(self, m.__name__),
+                                         method.require)
+            else:
+                deps_graph[method] = {}
+
+        return deps_graph
+
     def execute_tasks(self):
-        for task, args in self.args.items():
-            self.logger.info("Executing task %s" % task)
-            self.getattr(task)(*args) 
+        deps_graph = self.build_deps_graph()
+        start_methods = ftypes.List(self.args.keys()).map(lambda name: self.getattr(name))
+        for task_method in deps_graph.list(*start_methods):
+            self.logger.info("Executing task %s" % task_method.__name__)
+            if task_method.__name__ in self.args:
+                task_args = self.args[task_method.__name__]
+            else:
+                task_args = None
+
+            if task_args:
+                task_method(*task_args)
+            else:
+                task_method()

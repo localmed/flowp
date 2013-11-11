@@ -324,7 +324,7 @@ class TaskScript(Behavior):
         script = TestScript(['task1', 'task2:1,2'])
         script.execute_tasks()
         expect(script.t1).ok
-        expect(script.t2) == ['1','2']
+        expect(script.t2) == ['1', '2']
         
     def it_log_executed_tasks(self):
         class TaskScript(system.TaskScript):

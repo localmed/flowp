@@ -55,7 +55,7 @@ class Object:
 
     @property
     def dir(self):
-        return dir(self)
+        return List(dir(self))
 
 
 ############### ADAPTERS ###############
@@ -271,25 +271,29 @@ class Dict(dict):
 
 class DependencyGraph(Dict):
     def list(self, *vertices):
-        """Do topological sorting of graph, starting from given vertice."""
-        visited_vertices=Set([])
+        """Do topological sorting of graph, starting from given vertices."""
+        # These variables ideologically are not the same! It's important!
+        # reversed(visited_vertices) != sorted_vertices -> there are cases where these
+        # sequences are not the same
+        visited_vertices = Set()
+        sorted_vertices = List([])
 
-        def sort(vertice):
+        def visit(vertice):
             # Prevent from cycle
             if vertice in visited_vertices:
-                return []
+                return None
             else:
                 visited_vertices.add(vertice)
 
-            sequence = List([])
             if vertice in self:
                 for dep_vertice in self[vertice]:
-                    sequence.extend(sort(dep_vertice))
+                    visit(dep_vertice)
+            sorted_vertices.append(vertice)
 
-            sequence.append(vertice)
-            return sequence
+        for vertice in vertices:
+            visit(vertice)
+        return sorted_vertices
 
-        return sort(vertices[0])
 
 
 TYPES_MAP = {
