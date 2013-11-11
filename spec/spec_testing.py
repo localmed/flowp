@@ -389,15 +389,28 @@ class TextTestResults(Behavior):
 
 
 class TextTestRunner(Behavior):
-    def it_print_some_text_in_colors(self):
+    def writing_to_stream(self):
         class Stream:
             def __init__(self):
                 self.value = ''
 
             def write(self, value):
                 self.value = value
+        self.Stream = Stream
 
-        subject = testing.TextTestRunner(stream=Stream())
+    @when(writing_to_stream)
+    def it_print_final_result_without_color(self):
+        subject = testing.TextTestRunner(stream=self.Stream(), nocolors=True)
+        subject.stream.write('FAILED')
+        expect(subject.stream.value) == 'FAILED'
+        subject.stream.write('OK')
+        expect(subject.stream.value) == 'OK'
+        subject.stream.write('test')
+        expect(subject.stream.value) == 'test'
+
+    @when(writing_to_stream)
+    def it_print_final_result_in_color(self):
+        subject = testing.TextTestRunner(stream=self.Stream())
         subject.stream.write('FAILED')
         expect(subject.stream.value) == colors.RED + 'FAILED' + colors.END
         subject.stream.write('OK')
@@ -429,15 +442,29 @@ class TemporaryDirectory(Behavior):
 class TestProgram(Behavior):
     def before_each(self):
         self.Subject = testing.TestProgram
+        self.kwargs = dict(module=None, testLoader=mock.Mock(), testRunner=mock.Mock(),
+                           exit=False)
+
+    def it_set_nocolors_option(self):
+        o = self.Subject(argv=['t'], **self.kwargs)
+        expect(o.nocolors).not_ok
+        o = self.Subject(argv=['t'], nocolors=True, **self.kwargs)
+        expect(o.nocolors).ok
+        o = self.Subject(argv=['test_script', '--nocolors'], **self.kwargs)
+        expect(o.nocolors).ok
+        
+    def it_set_autorun_option(self):
+        o = self.Subject(argv=['t'], **self.kwargs)
+        expect(o.autorun).not_ok
+        o = self.Subject(argv=['t'], autorun=True, **self.kwargs)
+        expect(o.autorun).ok
+        o = self.Subject(argv=['test_script', '--autorun'], **self.kwargs)
+        expect(o.autorun).ok
+        o = self.Subject(argv=['test_script', '-a'], **self.kwargs)
+        expect(o.autorun).ok
 
     def given_autorun_flag(self):
-        self.kwargs = dict(argv=['test_script', '-a', 'test.testo'], exit=False,
-                           module=None, testLoader=mock.Mock(), testRunner=mock.Mock())
-
-    @when(given_autorun_flag)
-    def it_set_autorun_option(self):
-        subject = self.Subject(**self.kwargs)
-        expect(subject.autorun).ok
+        self.kwargs = dict(argv=['test_script', '-a', 'test.testo'], **self.kwargs)
 
     @when(given_autorun_flag)
     def it_run_testprogram_in_loop(self):

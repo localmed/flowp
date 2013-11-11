@@ -291,12 +291,13 @@ class TextTestResult(unittest.TestResult):
     COLOR_BLUE = '\033[94m'
 
 
-    def __init__(self, stream, descriptions, verbosity):
+    def __init__(self, stream, descriptions, verbosity, nocolors=False):
         super().__init__(stream, descriptions, verbosity)
         self.stream = stream
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
+        self.nocolors = nocolors
         self.analyzed_testcases = set()
         self.analyzed_contexts = set()
 
@@ -341,7 +342,7 @@ class TextTestResult(unittest.TestResult):
             return ''
         # changes last line to blue color
         elif re.match(r'^  \S', line):
-            if self.dots:
+            if self.nocolors:
                 return line
             else:
                 return self.COLOR_BLUE + line + self.COLOR_END
@@ -480,10 +481,10 @@ class TextTestResult(unittest.TestResult):
             self.stream.writeln()
             place = '"%s" [%s]' % (self.getDescription(test), 
                 self._testcase_name(test))
-            if not self.dots:
+            if not self.nocolors:
                 self.stream.write(self.COLOR_RED)
             self.stream.writeln("%s: %s" % (flavour, place))
-            if not self.dots:
+            if not self.nocolors:
                 self.stream.write(self.COLOR_END)
             self.stream.writeln()
             self.stream.writeln("%s" % self._format_traceback(err))
@@ -533,10 +534,16 @@ class TextTestRunner(unittest.TextTestRunner):
     """Set custom flowp test result class"""
     resultclass = TextTestResult
 
-    def __init__(self, stream=None, descriptions=True, verbosity=1, failfast=False, buffer=False, resultclass=None,
-                 warnings=None):
+    def __init__(self, stream=None, descriptions=True, verbosity=1, failfast=False,
+                 buffer=False, resultclass=None, warnings=None, nocolors=False):
         super().__init__(stream, descriptions, verbosity, failfast, buffer, resultclass, warnings)
-        self.stream = ColorWriteDecorator(self.stream)
+        self.nocolors = nocolors
+        if not nocolors:
+            self.stream = ColorWriteDecorator(self.stream)
+
+    def _makeResult(self):
+        return self.resultclass(self.stream, self.descriptions, self.verbosity,
+                                self.nocolors)
 
 
 class TemporaryDirectory(tempfile.TemporaryDirectory):
@@ -550,18 +557,54 @@ class TemporaryDirectory(tempfile.TemporaryDirectory):
 
 class TestProgram(unittest.TestProgram):
     AUTORUN_TIME_INTERVAL = 4
+
+    def __init__(self, module='__main__', defaultTest=None, argv=None, testRunner=None,
+                 testLoader=TestLoader, exit=True, verbosity=1, failfast=None,
+                 catchbreak=None, buffer=None, warnings=None, autorun=False,
+                 nocolors=False):
+        self.nocolors = nocolors
+        self.autorun = autorun
+        super().__init__(module, defaultTest, argv, testRunner, testLoader, exit, verbosity,
+                         failfast, catchbreak, buffer, warnings)
+
     RUN_MODULE = 'flowp.testing'
 
     def _getOptParser(self):
         parser = super()._getOptParser()
-        parser.add_option('-a', '--auto', dest='autorun', default=False, help='Auto run',
+        parser.add_option('-a', '--autorun', dest='autorun', default=False, help='Auto run',
                           action='store_true')
+        parser.add_option('--nocolors', dest='nocolors', default=False,
+                          help='Print results without colors', action='store_true')
         return parser
 
     def _setAttributesFromOptions(self, options):
         super()._setAttributesFromOptions(options)
         if options.autorun:
             self.autorun = options.autorun
+        if options.nocolors:
+            self.nocolors = options.nocolors
+
+    def runTests(self):
+        if self.catchbreak:
+            installHandler()
+        if self.testRunner is None:
+            self.testRunner = runner.TextTestRunner
+        if isinstance(self.testRunner, type):
+            try:
+                testRunner = self.testRunner(verbosity=self.verbosity,
+                                             failfast=self.failfast,
+                                             buffer=self.buffer,
+                                             warnings=self.warnings,
+                                             nocolors=self.nocolors)
+            except TypeError:
+                # didn't accept the verbosity, buffer or failfast arguments
+                testRunner = self.testRunner()
+        else:
+            # it is assumed to be a TestRunner instance
+            testRunner = self.testRunner
+        self.result = testRunner.run(self.test)
+        if self.exit:
+            sys.exit(not self.result.wasSuccessful())
 
     @classmethod
     def create(cls, *args, **kwargs):
