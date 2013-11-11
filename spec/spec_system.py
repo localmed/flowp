@@ -336,3 +336,27 @@ class TaskScript(Behavior):
 
         TaskScript(['task1']).execute_tasks()
         expect(self.logger_mock.info).called_with("Executing task task1")
+
+    def it_executes_tasks_regarding_to_dependency_statements(self):
+        class TaskScript(system.TaskScript):
+            s = ''
+            def task1(self):
+                self.s += '1'
+
+            @system.require(task1)
+            def task2(self):
+                self.s += '2'
+
+            def task3(self):
+                self.s += '3'
+
+            @system.require(task2, task3)
+            def task4(self):
+                self.s += '4'
+
+        scr = TaskScript(['task4', 'task2'])
+        scr.execute_tasks()
+        expect(scr.s.index('4')) > scr.s.index('3')
+        expect(scr.s.index('4')) > scr.s.index('2')
+        expect(scr.s.index('2')) > scr.s.index('1')
+        expect(len(scr.s)) == 4

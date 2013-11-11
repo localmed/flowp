@@ -243,6 +243,15 @@ class TermLogger(ftypes.Object):
         self._logger.info(msg)
 
 
+# task2 = require(task1)(task2)
+def require(*objects):
+    """Set to method require property and put there require decorator objects"""
+    def decorator(method):
+        method.require = set(objects)
+        return method
+    return decorator
+
+
 class TaskScript(ftypes.Object):
     @classmethod
     def create(cls):

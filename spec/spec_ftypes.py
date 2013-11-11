@@ -399,4 +399,14 @@ class DependencyGraph(Behavior):
         expect(l[-1]) == self.a
         expect(l.index(self.c)) > l.index(self.b)
         expect(l.len) == 3
-        
+
+    @when('executes list')
+    def it_handle_multiple_starting_points(self):
+        self.subject[self.a] = {self.b}
+        self.subject[self.b] = {self.c}
+        self.subject[self.d] = {self.c}
+        l = self.subject.list(self.a, self.d)
+        expect(l[0]) == self.c
+        expect(l.index(self.a)) > l.index(self.b)
+        expect(l.index(self.d)) > l.index(self.c)
+        expect(l.len) == 4

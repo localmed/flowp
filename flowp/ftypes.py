@@ -270,21 +270,26 @@ class Dict(dict):
 
 
 class DependencyGraph(Dict):
-    def list(self, vertice, visited_vertices=Set([])):
+    def list(self, *vertices):
         """Do topological sorting of graph, starting from given vertice."""
-        # Prevent from cycle
-        if vertice in visited_vertices:
-            return []
-        else:
-            visited_vertices.add(vertice)
+        visited_vertices=Set([])
 
-        sequence = List([])
-        if vertice in self:
-            for dep_vertice in self[vertice]:
-                sequence.extend(self.list(dep_vertice, visited_vertices))
+        def sort(vertice):
+            # Prevent from cycle
+            if vertice in visited_vertices:
+                return []
+            else:
+                visited_vertices.add(vertice)
 
-        sequence.append(vertice)
-        return sequence
+            sequence = List([])
+            if vertice in self:
+                for dep_vertice in self[vertice]:
+                    sequence.extend(sort(dep_vertice))
+
+            sequence.append(vertice)
+            return sequence
+
+        return sort(vertices[0])
 
 
 TYPES_MAP = {
