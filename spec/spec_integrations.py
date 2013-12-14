@@ -1,3 +1,4 @@
+import unittest
 from flowp import ftypes
 from flowp.testing import Behavior, expect
 
@@ -22,6 +23,7 @@ class Ftypes(Behavior):
         expect(self.fl.filter(lambda x: x != 'c')) == ['a', 'b', 'd', 'e']
         expect(self.fl2.set.map(lambda x: x.int)) == ftypes.Set([1, 2, 3, 4])
 
+    @unittest.skip("Under development")
     def it_do_methods_chain_operation_on_builtin_types_methods(self):
         expect(self.fnl.flatten.uniq.count(1).str) == '1'
         expect(self.fs.replace('b', 'z').isinstance(ftypes.Str)).ok
