@@ -72,6 +72,10 @@ Behavior specification (spec_mymodule.py):
     :class: terminal-screen
 
 
+.. note::
+    Feedback? Questions? https://groups.google.com/forum/#!forum/flowp
+
+
 flowp.testing
 --------------
 Module is written on top of builtin unittest module in a very minimalistic way
