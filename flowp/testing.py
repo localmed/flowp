@@ -65,35 +65,43 @@ class expect:
 
     @property
     def ok(self):
+        """expect(a).ok"""
         assert self._context,\
             "expected %s, given %s" % (True, self._context)    
 
     @property
     def not_ok(self):
+        """expect(a).not_ok"""
         assert not self._context,\
             "expected not %s, given %s" % (True, self._context)    
 
     def __eq__(self, expectation):
+        """expect(a) == b"""
         assert self._context == expectation,\
             "expected %s, given %s" % (expectation, self._context)
 
     def __ne__(self, expectation):
+        """expect(a) != b"""
         assert self._context != expectation,\
             "expected %s != %s" % (self._context, expectation)
 
     def __lt__(self, expectation):
+        """expect(a) < b"""
         assert self._context < expectation,\
             "expected %s < %s" % (self._context, expectation)
 
     def __le__(self, expectation):
+        """expect(a) <= b"""
         assert self._context <= expectation,\
             "expected %s <= %s" % (self._context, expectation)
 
     def __gt__(self, expectation):
+        """expect(a) > b"""
         assert self._context > expectation,\
             "expected %s > %s" % (self._context, expectation)
 
     def __ge__(self, expectation):
+        """expect(a) >= b"""
         assert self._context >= expectation,\
             "expected %s >= %s" % (self._context, expectation)
 

@@ -7,7 +7,7 @@ style with minimum of magic.
 
 .. note::
 
-    Only Python >=3.3
+    Only for Python >=3.3
 
 Quick start
 -----------
@@ -15,64 +15,111 @@ Put into spec_someobject.py:
 
 ..  code-block::python
 
+    import mymodule
     from flowp.testing import Behavior, when, expect
     from unittest import mock
-    from mymodule import SomeObject
+
 
     class SomeObject(Behavior):
         def before_each(self):
-            self.subject = SomeObject()
+            self.subject = mymodule.SomeObject()
 
         def logger_given(self):
             self.logger = mock.Mock()
-            self.subject = SomeObject(self.logger)
+            self.subject = mymodule.SomeObject(self.logger)
 
-        def it_counts_positive_number(self):
-            expect(self.subject(-1, 2, -3, 4)) == 2
+        def it_counts_positive_numbers(self):
+            expect(self.subject.count(-1, 2, -3, 4)) == 2
 
         @when(logger_given)
         def it_sends_results_to_logger(self):
+            self.subject.count(-1, 2, -3, 4)
             expect(self.logger.info).called_with(2)
 
 ::
 
-    $ pip install flowp
+    $ pip3 install flowp
     $ python3 -m flowp.testing -v
+
+
+.. image:: _static/test_runner_ok_results.png
 
 
 flowp.testing
 --------------
-Characteristic:
+Module is written on top of builtin unittest module in a very minimalistic way
+with minimum of magic. It provides 4 features of BDD style testing:
 
-* follow BDD style
-* influenced by RSpec
-* minimalistic
-* with minimum of magic
-* written on top of unittest
+* specyfications (style for test cases)
+* expectations (style for asserts)
+* behavior contexts
+* specyfication oriented test runner
 
-
-BDD style conventions:
-
-* specifications
-* expectations
-* contexts
+In the end it's all about bringing testing style, testing good practices.
 
 
 Specyfications
 ^^^^^^^^^^^^^
-They are specify object behaviors, kind of replacement of test cases.
+Replacement for test cases. Specifications are the way how we want to
+describe objects which we want to create, we specify, describe their
+behaviors.
+That's why test case should have more descriptive character and each
+test method should describe behavior of the object which we want to test.
 
-* each file which contains specifications should be prefixed with spec_*
+This have some consequences in the test case construct:
+* each test method should start with it_*
+* name of test module should start with spec_*
+* test case class should inherit from 'Behavior' class
+* setUp / tearDown methods are now before_each / after_each methods
 
+.. code-block:: python
+
+    from flowp.testing import Behavior
+
+    class TermLogger(Behavior):
+        def it_log_error_with_red_color(self):
+            ...
+
+        def it_log_info_with_white_color(self):
+            ...
+
+.. note::
+
+    For now there is no before_all / after_all methods but it is planned
+    to add them.
 
 Expectations
 ^^^^^^^^^^^^^^
-Expectations are replacement of asserts.
+Expectations are replacement of asserts. Main pattern of expectation::
+
+    expect(subject) == expected_value
+
+There are many type of expectations:
 
 .. autoclass:: expect
     :members:
 
-Contexts
+You can also create Your own expectations. 'expect' is a normal class
+(but with lower cased name), which implements methods such a '__eq__' or
+'ok', so You can write Your own expect class which will inherit from
+the original one.
+
+.. code-block:: python
+
+    from flowp import testing
+
+    class expect(testing.expect):
+        def my_assert(self, expectation):
+            assert self._context == expectation,\
+                "expected %s, given %s" % (expectation, self._context)
+
+
+::
+
+    expect(2).my_assert(2)
+
+
+Behavior contexts
 ^^^^^^^^^^^^^^
 It is possible to give contexts for specyfic behaviors by @when decorator.
 Decorator can take as an argument generator or string. When it receive generator
@@ -92,6 +139,10 @@ results.
         def it_can_delete_posts(self):
             pass
 
+        @when(logged_as_admin):
+        def it_can_add_new_users(self):
+            pass
+
         @when('executing login'):
         def it_rejects_not_registered(self):
             pass
@@ -99,9 +150,10 @@ results.
 
 'yield' statement define the border between setup/teardown actions,
 like in contextlib.contextmanager module but for tests. Context method
-can be without yield statement and it will behave like a setup context.
+can be also used without yield statement and then it will behave like an
+only setup context.
 
-We can also check many contexts:
+We can also use many contexts together:
 
 .. code-block:: python
 
@@ -125,11 +177,29 @@ We can also check many contexts:
 
 Unfortunally behaviors with identical names will collide even if they
 have different contexts in when decorator. For now there is no solution for
-this.
+this, they just need different names.
+
+Specyfications runner
+^^^^^^^^^^^^^
+Flowp add some additional features to standard unittest test runner:
+
+* coloring
+* descriptive character results
+* results context oriented (cooperation with @when)
+* reformatted fails feedback (more minimalistic with colors)
+* 2 new script options (-a --auto and --nocolors)
+
+.. image:: _static/test_runner_fail_results.png
+
+Specyfications runner fired with option --auto (-a)::
+
+    python3 -m flowp.testing --auto
+
+will automatically rerun specs, after each 4 seconds.
 
 
 Plans for the future
------------
+^^^^^^^^^^^^^
 There are plans for 3 additional modules in version 2.0:
 
 * flowp.ftypes - overwritted or additional data structures like List, Dict,
@@ -140,4 +210,4 @@ Str, DependencyGraph with extra methods.
 * flowp.task - universal task/package manager (infuenced by Rake, Yeoman,
 Grunt, Fabric, Brew)
 
-Each of them is already partly implemented.
+Each of them is already partly implemented but not presented at version 1.0 .
