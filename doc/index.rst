@@ -1,19 +1,46 @@
 Flowp 1.0
------------
+==========
 Flowp is a library which tries to bring the best ideas from Ruby / node.js
 world to Python making development more fun. For version 1.0 module
 flowp.testing is avaiable which allows to write tests in a RSpec BDD
 style with minimum of magic.
 
+Installation
+------------
+::
+
+    $ pip3 install flowp
+
 .. note::
 
     Only for Python >=3.3
 
+
 Quick start
 -----------
-Put into spec_someobject.py:
+Test subject (mymodule.py):
 
-..  code-block::python
+.. code-block:: python
+
+    class SomeObject:
+        def __init__(self, logger=None):
+            self._logger = logger
+
+        def count(self, *args):
+            positives = 0
+            for arg in args:
+                if arg < 0:
+                    positives += 1
+
+            if self._logger:
+                self._logger.info(positives)
+            else:
+                return positives
+
+
+Behavior specyfication (spec_mymodule.py):
+
+..  code-block:: python
 
     import mymodule
     from flowp.testing import Behavior, when, expect
@@ -38,11 +65,11 @@ Put into spec_someobject.py:
 
 ::
 
-    $ pip3 install flowp
     $ python3 -m flowp.testing -v
 
 
 .. image:: _static/test_runner_ok_results.png
+    :class: terminal-screen
 
 
 flowp.testing
@@ -67,6 +94,7 @@ That's why test case should have more descriptive character and each
 test method should describe behavior of the object which we want to test.
 
 This have some consequences in the test case construct:
+
 * each test method should start with it_*
 * name of test module should start with spec_*
 * test case class should inherit from 'Behavior' class
@@ -90,14 +118,70 @@ This have some consequences in the test case construct:
 
 Expectations
 ^^^^^^^^^^^^^^
-Expectations are replacement of asserts. Main pattern of expectation::
+Expectations are replacement of asserts. They provide better feedback than asserts
+similar to self.assert* methods, but they are shorter and easier to remember.
+Main pattern of expectation::
 
     expect(subject) == expected_value
 
-There are many type of expectations:
+There are many type of expectations.
 
-.. autoclass:: expect
-    :members:
+Basic expectations
+""""""""""""""""""""
+
+=============================== ===============================
+expectation                     corresponding assert
+=============================== ===============================
+expect(a).ok                    assert a
+expect(a).not_ok                assert not a
+expect(a) == b                  assert a == b
+expect(a) != b                  assert a != b
+expect(a) < b                   assert a < b
+expect(a) > b                   assert a > b
+expect(a) >= b                  assert a >= b
+expect(a) <= b                  assert a <= b
+expect(a).isinstance(b)         assert isinstance(a, b)
+expect(a).not_isinstance(b)     assert not isinstance(a, b)
+expect(a).be_in(b)              assert a in b
+expect(a).not_be_in(b)          assert a not in b
+expect(a).be(b)                 assert a is b
+expect(a).not_be(b)             assert a is not b
+=============================== ===============================
+
+Exception expectation
+"""""""""""""""""""""""
+
+.. code-block:: python
+
+    def my_func(a):
+        if isinstance(a, int):
+            raise WrongArgument()
+
+    expect(my_func).to_raise(WrongArgument).by_call(1)
+
+.. note::
+
+    You can still use old methods like self.assertRaises(), becouse
+    Behavior class inherit from unittest.TestCase
+
+
+Mock expectations
+""""""""""""""""""""
+::
+
+    from unittest import mock
+    m = mock.Mock()
+
+=============================== ===============================
+expectation                     corresponding assert
+=============================== ===============================
+expect(m).called                assert m.called
+expect(m).not_called            assert not m.called
+expect(m).called_with(...)      m.assert_any_cal(...)
+=============================== ===============================
+
+Custom expectations
+""""""""""""""""""""
 
 You can also create Your own expectations. 'expect' is a normal class
 (but with lower cased name), which implements methods such a '__eq__' or
@@ -109,14 +193,14 @@ the original one.
     from flowp import testing
 
     class expect(testing.expect):
-        def my_assert(self, expectation):
+        def is_equal_to(self, expectation):
             assert self._context == expectation,\
                 "expected %s, given %s" % (expectation, self._context)
 
 
 ::
 
-    expect(2).my_assert(2)
+    expect(2).is_equal_to(2)
 
 
 Behavior contexts
@@ -175,7 +259,7 @@ We can also use many contexts together:
         def it_pass_process(self):
             ...
 
-Unfortunally behaviors with identical names will collide even if they
+Unfortunally test methods with identical names will collide even if they
 have different contexts in when decorator. For now there is no solution for
 this, they just need different names.
 
@@ -190,16 +274,17 @@ Flowp add some additional features to standard unittest test runner:
 * 2 new script options (-a --auto and --nocolors)
 
 .. image:: _static/test_runner_fail_results.png
+    :class: terminal-screen
 
 Specyfications runner fired with option --auto (-a)::
 
     python3 -m flowp.testing --auto
 
-will automatically rerun specs, after each 4 seconds.
+will be automatically rerunning specs, after each 4 seconds.
 
 
 Plans for the future
-^^^^^^^^^^^^^
+--------------
 There are plans for 3 additional modules in version 2.0:
 
 * flowp.ftypes - overwritted or additional data structures like List, Dict,
