@@ -7,11 +7,14 @@ from collections import OrderedDict
 import tempfile
 import time
 import sys
-from flowp.system import TermColors as colors
 import imp
 import glob
 import subprocess
 
+class colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    END = '\033[0m'
 
 class BDDTestCase(type):
     """Meta class for test case class (Behavior). Creates aliases 

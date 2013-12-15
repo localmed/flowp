@@ -1,11 +1,19 @@
 from flowp.testing import Behavior, when, expect, FileSystemBehavior
 from flowp import testing
-from flowp.system import TermColors as colors, touch, mkdir
+from flowp.testing import colors
 from unittest import mock
 import tempfile
 import os
 import importlib
 import sys
+
+
+def touch(filename):
+    with open(filename, 'w'):
+        pass
+
+# Alias for os.mkdir
+mkdir = os.makedirs
 
 
 class Expect(Behavior):
