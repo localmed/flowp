@@ -1,4 +1,4 @@
-Flowp 1.0
+Flowp 2.0
 ==========
 Flowp is a library which tries to bring the best ideas from Ruby / node.js
 world to Python making development more fun. For version 1.0 module
