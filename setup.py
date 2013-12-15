@@ -64,7 +64,7 @@ Behavior specyfication (spec_mymodule.py):
             self.subject.count(-1, 2, -3, 4)
             expect(self.logger.info).called_with(2)
 
-::
+Then run::
 
     $ python3 -m flowp.testing -v
 """
