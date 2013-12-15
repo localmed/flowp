@@ -1,14 +1,10 @@
-            Flowp
-    ~ Bringing best ideas from Ruby world to Python ~
+Flowp 1.0
+==========
+Flowp is a library which tries to bring the best ideas from Ruby / node.js
+world to Python making development more fun. For version 1.0 module
+flowp.testing is avaiable which allows to write tests in a RSpec BDD
+style with minimum of magic.
 
-
-What is flowp ?
-
-Flowp is a set of handy libraries / modules which should makes working 
-with Python more enjoyable and productive.
-
-For now flowp contains:
-
-    - flowp.testing - better testing framework (BDD, influenced by RSpec) [ready to use]
-    - flowp.ftypes - better data structures / types processing / methods chains
-    - flowp.system - better files / process manipulation / building system
+    Docs: ...
+    Discussion group: ...
+    PyPi: ...

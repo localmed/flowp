@@ -2,7 +2,7 @@ Flowp 1.0
 ==========
 Flowp is a library which tries to bring the best ideas from Ruby / node.js
 world to Python making development more fun. For version 1.0 module
-flowp.testing is avaiable which allows to write tests in a RSpec BDD
+flowp.testing is available which allows to write tests in a RSpec BDD
 style with minimum of magic.
 
 Installation
@@ -38,7 +38,7 @@ Test subject (mymodule.py):
                 return positives
 
 
-Behavior specyfication (spec_mymodule.py):
+Behavior specification (spec_mymodule.py):
 
 ..  code-block:: python
 
@@ -77,15 +77,15 @@ flowp.testing
 Module is written on top of builtin unittest module in a very minimalistic way
 with minimum of magic. It provides 4 features of BDD style testing:
 
-* specyfications (style for test cases)
+* specifications (style for test cases)
 * expectations (style for asserts)
 * behavior contexts
-* specyfication oriented test runner
+* specification oriented test runner
 
 In the end it's all about bringing testing style, testing good practices.
 
 
-Specyfications
+Specifications
 ^^^^^^^^^^^^^
 Replacement for test cases. Specifications are the way how we want to
 describe objects which we want to create, we specify, describe their
@@ -120,7 +120,7 @@ Expectations
 ^^^^^^^^^^^^^^
 Expectations are replacement of asserts. They provide better feedback than asserts
 similar to self.assert* methods, but they are shorter and easier to remember.
-Main pattern of expectation::
+Example of expectation::
 
     expect(subject) == expected_value
 
@@ -161,7 +161,7 @@ Exception expectation
 
 .. note::
 
-    You can still use old methods like self.assertRaises(), becouse
+    You can still use old methods like self.assertRaises(), because
     Behavior class inherit from unittest.TestCase
 
 
@@ -184,7 +184,7 @@ Custom expectations
 """"""""""""""""""""
 
 You can also create Your own expectations. 'expect' is a normal class
-(but with lower cased name), which implements methods such a '__eq__' or
+(but with lowercased name), which implements methods such a '__eq__' or
 'ok', so You can write Your own expect class which will inherit from
 the original one.
 
@@ -205,7 +205,7 @@ the original one.
 
 Behavior contexts
 ^^^^^^^^^^^^^^
-It is possible to give contexts for specyfic behaviors by @when decorator.
+It is possible to give contexts for specific behaviors by @when decorator.
 Decorator can take as an argument generator or string. When it receive generator
 it will treat it as a context manager, string will be only used for test runner
 results.
@@ -259,11 +259,11 @@ We can also use many contexts together:
         def it_pass_process(self):
             ...
 
-Unfortunally test methods with identical names will collide even if they
+Unfortunately test methods with identical names will collide even if they
 have different contexts in when decorator. For now there is no solution for
 this, they just need different names.
 
-Specyfications runner
+Specifications runner
 ^^^^^^^^^^^^^
 Flowp add some additional features to standard unittest test runner:
 
@@ -276,7 +276,7 @@ Flowp add some additional features to standard unittest test runner:
 .. image:: _static/test_runner_fail_results.png
     :class: terminal-screen
 
-Specyfications runner fired with option --auto (-a)::
+Specifications runner fired with option --auto (-a)::
 
     python3 -m flowp.testing --auto
 
@@ -287,12 +287,12 @@ Plans for the future
 --------------
 There are plans for 3 additional modules in version 2.0:
 
-* flowp.ftypes - overwritted or additional data structures like List, Dict,
-Str, DependencyGraph with extra methods.
+* flowp.ftypes - overwritten or additional data structures like List, Dict,
+  Str, DependencyGraph with extra methods.
 
-* flowp.system - more convinient files manipulation
+* flowp.system - more convenient files manipulation
 
-* flowp.task - universal task/package manager (infuenced by Rake, Yeoman,
-Grunt, Fabric, Brew)
+* flowp.task - universal task/package manager (influenced by Rake, Yeoman,
+  Grunt, Fabric, Brew)
 
 Each of them is already partly implemented but not presented at version 1.0 .
