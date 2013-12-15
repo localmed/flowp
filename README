@@ -5,6 +5,6 @@ world to Python making development more fun. For version 1.0 module
 flowp.testing is avaiable which allows to write tests in a RSpec BDD
 style with minimum of magic.
 
-    Docs: ...
-    Discussion group: ...
-    PyPi: ...
+    Docs: http://flowp.readthedocs.org/en/latest/
+    Discussion group: https://groups.google.com/forum/#!forum/flowp
+    PyPi: https://pypi.python.org/pypi/flowp/1.0
