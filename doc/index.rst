@@ -29,7 +29,7 @@ Test subject (mymodule.py):
         def count(self, *args):
             positives = 0
             for arg in args:
-                if arg < 0:
+                if arg > 0:
                     positives += 1
 
             if self._logger:
@@ -70,6 +70,9 @@ Behavior specification (spec_mymodule.py):
 
 .. image:: _static/test_runner_ok_results.png
     :class: terminal-screen
+
+.. note::
+    Feedback? Questions? https://groups.google.com/forum/#!forum/flowp
 
 
 flowp.testing

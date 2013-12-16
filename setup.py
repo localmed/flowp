@@ -30,7 +30,7 @@ Test subject (mymodule.py):
         def count(self, *args):
             positives = 0
             for arg in args:
-                if arg < 0:
+                if arg > 0:
                     positives += 1
 
             if self._logger:
@@ -64,7 +64,7 @@ Behavior specyfication (spec_mymodule.py):
             self.subject.count(-1, 2, -3, 4)
             expect(self.logger.info).called_with(2)
 
-::
+Then run::
 
     $ python3 -m flowp.testing -v
 """
@@ -72,15 +72,16 @@ from distutils.core import setup
 
 setup(
     name='flowp',
-    version='1.0',
+    version='2.0-dev',
     description='More fun with Python development',
-    url='https://github.com/pawelgalazka/flowp',
+    long_description=__doc__,
+    url='http://flowp.readthedocs.org/en/latest/',
     license='BSD',
     author='Pawel Galazka',
     author_email='pawel.galazka@pracli.com',
     packages=['flowp'],
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 1 - Planning',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
