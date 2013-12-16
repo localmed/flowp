@@ -30,7 +30,7 @@ Test subject (mymodule.py):
         def count(self, *args):
             positives = 0
             for arg in args:
-                if arg < 0:
+                if arg > 0:
                     positives += 1
 
             if self._logger:
