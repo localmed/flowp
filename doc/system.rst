@@ -18,6 +18,3 @@ sdfsfs
     cp(Files(['libs/*.js', 'base.js'], 'clibs')
 
 
-Task scripts
--------------
-sdfsf

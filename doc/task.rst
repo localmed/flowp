@@ -1,4 +1,4 @@
-TaskScript
+flowp.task
 ===============
 
 Features:
