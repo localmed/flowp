@@ -576,7 +576,7 @@ a:hover tt {
     display: none!important;
 }
 
-/* flowp custom */
+/* flowp custom CSS */
 img.terminal-screen {
     margin: 0px -30px;
     background-color: #000;
@@ -584,5 +584,12 @@ img.terminal-screen {
 }
 
 .sphinxsidebarwrapper li li li ul {
+    display: none;
+}
+
+#flowp\.system\.cd .property {
+    display: none;
+}
+#module-flowp\.system .descclassname {
     display: none;
 }

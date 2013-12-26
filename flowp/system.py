@@ -94,6 +94,7 @@ class Process(ftypes.Object):
 
     def arg(self, kv, v=None):
         """Add arguments to the process
+
         :param kv:
             argument key/name or value right away
         :param v:
@@ -136,14 +137,14 @@ class Process(ftypes.Object):
 class cd:
     """Change working directory. Behave exacly like os.chdir, except
     that it can be used as context manager.
-    Example:
+    Example::
 
         with cd('some/path'):
             # do some operations
             pass
 
     After exiting the context, return to the oryginal working directory.
-    This also works but doesn't return to the original working dir:
+    This also works but doesn't return to the original working dir::
 
         cd('some/path')
     """
@@ -164,6 +165,14 @@ mkdir = os.makedirs
 
 # Alias for copy
 def cp(src, dst):
+    """
+    ::
+
+        cp('dir/file.py', 'dir2/file.py')
+        cp('dir/*.py', 'dir2')
+        cp('dir/**/*', 'dir2')
+        cp(Files(['file1.py', 'file2.py']), 'dir')
+    """
     if hasattr(src, '_cp'):
         src._cp(dst)
     elif hasattr(dst, '_cp'):
@@ -173,6 +182,14 @@ def cp(src, dst):
 
 # Alias for move
 def mv(src, dst):
+    """
+    ::
+
+        mv('dir/file.py', 'dir2/file.py')
+        mv('dir/*.py', 'dir2')
+        mv('dir/**/*', 'dir2')
+        mv(Files(['file1.py', 'file2.py']), 'dir')
+    """
     if hasattr(src, '_mv'):
         src._mv(dst)
     elif hasattr(dst, '_mv'):
@@ -181,25 +198,38 @@ def mv(src, dst):
         shutil.move(src, dst)
 
 def rm(path):
+    """
+    ::
+
+        rm('dir/file.py')
+        rm('dir/*.py')
+        rm('dir/**/*')
+        rm(Files(['file1.py', 'file2.py']))
+    """
     if hasattr(path, '_rm'):
         path._rm()
     else:
         os.unlink(path)
 
 def sh(command):
-    """Executes shell command as is
-    :param str command:
-        command to execute
-    """ 
+    """Executes shell command as is"""
     subprocess.check_call(command, shell=True)
 
-def pwd():
+def pwd(path):
+    """Return current working directory"""
     pass
 
 def rmdir():
+    """
+    ::
+
+        rmdir('dir')
+        rmdir('path/*')
+    """
     pass
 
 def touch(filename):
+    """Create an empty file"""
     with open(filename, 'w'):
         pass
 
