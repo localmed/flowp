@@ -262,3 +262,26 @@ Specifications runner fired with option --auto (-a)::
     python3 -m flowp.testing --auto
 
 will be automatically rerunning specs, after each 4 seconds.
+
+
+
+Files testing
+^^^^^^^^^^^^^^^
+Example:
+
+.. code-block:: python
+
+    from flowp.testing import FileSystemBehavior, expect
+    from flowp.system import touch, exist
+
+    class Touch(FileSystemBehavior):
+        def before_each(self):
+            super().before_each()
+            # do some preparations
+
+        def it_create_file(self):
+            touch('testfile')
+            expect(exist('testfile')).ok
+
+.. autoclass:: flowp.testing.FileSystemBehavior
+    :members: before_each, after_each, reset_cwd

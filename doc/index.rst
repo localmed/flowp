@@ -25,9 +25,18 @@ User's guide
 
 
     testing
-    system
+    files
     task
 
 Changes log
 ---------------------
-sfs
+
+1.1
+^^^^^^^
+* new modules: flowp.system and flowp.task
+* flowp.testing: support for files system testing
+
+1.0 (2013-12-15)
+^^^^^^^
+* initial release
+* flowp.testing module only

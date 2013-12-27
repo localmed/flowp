@@ -1,119 +1,157 @@
 flowp.task
 ===============
+Module provides simple framework for universal task management. At this point
+it can be used either for building process, package management or scaffolding.
 
-Features:
+Quick start
+-------------
 
-    - task management
-    - universal package management
-    - scaffolding
+Create file taskfile.py:
+
+.. code-block:: python
+
+    from flowp import task
+
+    class Main(task.Plugin):
+        def hello(self, name=""):
+            print("Hello %s!" % name)
+
+In the same directory run task script from command line:
+
+.. code-block:: bash
+
+    $ task hello
+    Hello !
+    $ task hello:world
+    Hello world!
+
+Components
+-------------
+.. autoclass:: flowp.task.Plugin
+
+.. autoclass:: flowp.task.Script
 
 
 
-Task file
+Namespacing
 -------------------
 
-Example of taskfile.py:
+.. code-block:: python
 
-    class TaskFile(system.TaskFile):
-        def print_something(self):
-            print("Tada!")
+    from flowp import task
 
 
-$ task print_something
-Tada!
+    class Nm2(task.Plugin):
+        def hello(self, who="2"):
+            print("Hello " + who)
 
+    class Nm1(task.Plugin):
+        nm2 = Nm2()
 
+        def __call__(self):
+            print("Hello 0")
 
-Task dependencies
+        def hello(self):
+            print("Hello 1")
+
+    class Main(task.Plugin):
+        nm1 = Nm1()
+
+.. code-block:: bash
+
+    $ task nm1
+    Hello 0
+    $ task nm1::hello
+    Hello 1
+    $ task nm1::nm2::hello
+    Hello 2
+    $ task nm1::nm2::hello:world
+    Hello world
+
+Dependencies
 -------------------
 
-    class TaskFile(system.TaskFile):
+.. code-block:: python
+
+    from flowp import task
+
+    class TaskFile(task.Plugin):
         def t1(self):
             print('T1')
 
-        @require(t1)
+        @task.require(t1)
         def t2(self):
             print('T2')
 
-        @require(t1, t2)
+        @task.require(t1, t2)
         def t3(self):
             print('T3')
 
 
+.. code-block:: bash
 
-$ task t3
-T1
-T2
-T3
-
-$ task t2
-T1
-T2
+    $ task t3
+    T1
+    T2
+    T3
 
 
-Task logger
--------------------
+Builtin plugins
+----------------
+sdfsf
 
-    from flowp import system
-    import logging
+Install
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    class TaskFile(system.TaskFile):
-        logger = logging.getLogger('taskscript')
+Invoking:
 
-        def t1(self):
-            pass
+.. code-block:: bash
 
-Custom task manager
----------------------
+    $ task install:web.jquery
+    $ task install:py.flask
+    $ task install::list
+    $ task install::search:jquery
+    $ task uninstall:py.flask
 
-Example:
+Package formula searching algorithm (web.jquery):
 
-    #!/bin/env python
+#. .task/packages/web/jquery.py
+#. $HOME/.task/packages/web/jquery.py
 
-    from flowp import system
+Package formula (jquery.py):
 
-    class Foo(system.TaskScript):
+.. code-block:: python
+
+    class Main(task.packages.web.Package):
         def install(self):
-            print("Do installing!")
-
-    Foo.parse()
-
-$ foo install
-Do installing!
-
-
-
-Universal package management
------------------------------
-
-Package manager:
-
-    class PackageManager(system.PackageManager):
-        register = {
-            'jquery2': Jquery2,
-            'angularjs12': AngularJS12
-        }
-
-        def search(self):
             ...
 
-        def list(self):
+        def uninstall(self):
             ...
 
+When invoking with no arguments:
 
-Package formula:
+.. code-block:: bash
 
-    class Jquery2(system.PackageFormula):
-        source = 'git://something'
-        require = []
+    $ task install
+
+it reads packages info from install_requires variable
+from taskfile.py
+
+.. code-block:: python
+
+    install_packages = []
+
+Scaffold
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Support for scaffolding
--------------------------
+.. code-block:: bash
+
+    $ task scaffold::webapp
 
 
-task install:scaffold
-
+.. code-block:: python
 
     from system import TaskFile, cp
 
@@ -124,7 +162,3 @@ task install:scaffold
         def genagnular(self, type):
             if type == 'controller':
                 cp(self.tmpl('ctrl_pattern.js'), 'controller.js')
-            
-
-
-$ task genangular:controller

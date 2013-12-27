@@ -242,6 +242,18 @@ def chown():
 def ln():
     pass
 
+def watch(files, callback):
+    """
+    Create a watch on chosen files and trigger a listener when some of actions:
+    new, modify, delete occurs::
+
+        def compile_coffee(action, files):
+            pass
+
+        watch('src/*.coffee', compile_coffee)
+    """
+    pass
+
 
 # Import alias for better debugging / mocking
 import_alias = __import__

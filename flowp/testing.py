@@ -44,14 +44,24 @@ class FileSystemBehavior(Behavior):
     After each test, returns to primary 'cwd' and remove temporary directory.
     """
     def before_each(self):
+        """
+        Set current working directory to the tempfile.TemporaryDirectory
+        """
         self.tempdir = TemporaryDirectory()
         self.tempdir.enter()
 
     def after_each(self):
+        """
+        Set current working directory to the original one.
+        """
         self.tempdir.exit()
         self.tempdir.cleanup()
 
     def reset_cwd(self):
+        """
+        Reset current working directory to the root of created temporary
+        directory.
+        """
         os.chdir(self.tempdir.name)
 
 
