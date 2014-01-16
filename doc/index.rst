@@ -27,6 +27,7 @@ User's guide
     testing
     files
     task
+    web
 
 Changes log
 ---------------------

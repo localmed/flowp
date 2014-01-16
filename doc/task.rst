@@ -12,7 +12,7 @@ Create file taskfile.py:
 
     from flowp import task
 
-    class Main(task.Plugin):
+    class Plugin(task.Plugin):
         def hello(self, name=""):
             print("Hello %s!" % name)
 
@@ -25,16 +25,49 @@ In the same directory run task script from command line:
     $ task hello:world
     Hello world!
 
-Components
+Code can be also placed in $HOME/.task/plugins/somename.py, but then task 'hello'
+will be available globally, independently from the working directory.
+
+Plugins
 -------------
-.. autoclass:: flowp.task.Plugin
+They are the basic component of the framework. Plugins are the classes
+which contains task methods or other plugins instances and inherit from
+flowp.task.Plugin class. They can be stored in the python files in 3 locations:
 
-.. autoclass:: flowp.task.Script
+#. ./taskfile.py
+#. ./.task/plugins/\*.py
+#. $HOME/.task/plugins/\*.py
 
+Task script create a top plugin class which will inherit from all Plugin classes,
+which inherit from flowp.task.Plugin and are founded in the locations above.
+Order corresponds to order of multi-inheriting (mro).
+
+Then top plugin class will instantiated and proper methods will be invoked
+by given arguments.
+
+This have some important consequences:
+
+* you can create global and local plugins, so global tasks or task specyfic for
+  a project can be simply distincted
+* task methods founded in the plugins will be avaiable from task script (task command)
+
+
+You can do imports from 2 last locations (.task/plugins):
+
+.. code-block:: python
+
+    from task.plugins import some_plugin
+
+or from task file
+
+.. code-block:: python
+
+    import taskfile
 
 
 Namespacing
 -------------------
+Namespaces can be created by placing task plugin into another:
 
 .. code-block:: python
 
@@ -54,7 +87,7 @@ Namespacing
         def hello(self):
             print("Hello 1")
 
-    class Main(task.Plugin):
+    class Plugin(task.Plugin):
         nm1 = Nm1()
 
 .. code-block:: bash
@@ -75,7 +108,7 @@ Dependencies
 
     from flowp import task
 
-    class TaskFile(task.Plugin):
+    class Plugin(task.Plugin):
         def t1(self):
             print('T1')
 
@@ -122,7 +155,7 @@ Package formula (jquery.py):
 
 .. code-block:: python
 
-    class Main(task.packages.web.Package):
+    class Formula(task.plugins.web.Formula):
         def install(self):
             ...
 
@@ -135,12 +168,16 @@ When invoking with no arguments:
 
     $ task install
 
-it reads packages info from install_requires variable
-from taskfile.py
+it reads packages info from Formula class from taskfile.py
 
 .. code-block:: python
 
-    install_packages = []
+    class Formula(task.plugins.install.Formula):
+        requires = [
+            'bower.jquery@2.0',
+            'npm.karma',
+            'pip.flask'
+        ]
 
 Scaffold
 ^^^^^^^^^^^^^^^^^^^^^^^^^
