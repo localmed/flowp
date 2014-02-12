@@ -134,16 +134,9 @@ Exception expectation
 
 .. code-block:: python
 
-    def my_func(a):
-        if isinstance(a, int):
-            raise WrongArgument()
+    with expect.to_raise(AssertionError):
+        assert 1 == 2
 
-    expect(my_func).to_raise(WrongArgument).by_call(1)
-
-.. note::
-
-    You can still use old methods like self.assertRaises(), because
-    Behavior class inherit from unittest.TestCase
 
 
 Mock expectations

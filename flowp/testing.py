@@ -69,6 +69,20 @@ class expect:
     # Flag which says that this class should be omitted in test result tracebacks
     _pass_unittest_traceback = True
 
+    class to_raise:
+        _pass_unittest_traceback = True
+        def __init__(self, expected_exc):
+            self.expected_exc = expected_exc
+
+        def __enter__(self):
+            pass
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if not exc_type:
+                raise AssertionError("expected exception %s"
+                                     % self.expected_exc.__name__)
+            return True
+
     def __init__(self, context):
         self._context = context
         self._expected_exception = None
@@ -138,18 +152,6 @@ class expect:
     def not_be(self, expectation):
         assert self._context is not expectation,\
             "%s is %s" % (self._context, expectation)
-
-    def to_raise(self, expected_exception):
-        self._expected_exception = expected_exception
-        return self
-
-    def by_call(self, *args, **kwargs):
-        try:
-            self._context(*args, **kwargs)
-            raise AssertionError("%s exception should be raised" % \
-                self._expected_exception.__name__)
-        except self._expected_exception:
-            pass 
 
     @property
     def called(self):

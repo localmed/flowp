@@ -16,6 +16,18 @@ class Expect(Behavior):
         self.Object = Object
         self.obj = Object()
 
+    def it_should_do_to_raise_assert(self):
+        class TestException(Exception):
+            pass
+
+        with expect.to_raise(TestException):
+            raise TestException()
+
+        with self.assertRaises(AssertionError):
+            with expect.to_raise(TestException):
+                assert True
+
+
     def it_do_true_false_asserts(self):
         expect(True).ok
         expect(False).not_ok
@@ -72,25 +84,6 @@ class Expect(Behavior):
             expect(self.obj).be(self.Object())
         with self.assertRaises(AssertionError):
             expect(self.obj).not_be(self.obj)
-
-
-    def it_do_to_raise_expectation(self):
-        class TestException(Exception):
-            pass
-
-        class TestException2(Exception):
-            pass
-
-        def func():
-            raise TestException()
-
-        def func2():
-            pass
-
-        expect(func).to_raise(TestException).by_call()
-
-        with self.assertRaises(AssertionError):
-            expect(func2).to_raise(TestException).by_call()
 
     def it_do_mock_expectations(self):
         m = mock.Mock() 
