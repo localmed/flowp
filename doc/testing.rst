@@ -148,18 +148,8 @@ Exception expectation
 
 Mock expectations
 """"""""""""""""""""
-::
+link to mocking...
 
-    from unittest import mock
-    m = mock.Mock()
-
-=============================== ===============================
-expectation                     corresponding assert
-=============================== ===============================
-expect(m).called                assert m.called
-expect(m).not_called            assert not m.called
-expect(m).called_with(...)      m.assert_any_cal(...)
-=============================== ===============================
 
 Custom expectations
 """"""""""""""""""""
@@ -263,6 +253,42 @@ Specifications runner fired with option --auto (-a)::
 
 will be automatically rerunning specs, after each 4 seconds.
 
+
+Mocking
+^^^^^^^^^^^^^^^
+Very simple mocking:
+
+* self.mock is a mocks factory
+* it returns MagicMock each time as default
+* it can be used as patcher if first argument given
+  (mock factory holds reference and it will unpatch mock after each test)
+* have type arg (type='magicmock')
+* work as patch.object: self.mock(object, 'attr_name')
+
+.. code-block:: python
+
+    class MyObject(Behavior):
+        def before_each(self):
+            self.mocked_logger = self.mock('logger')
+
+        def it_do_some_stuff(self):
+            ...
+
+
+Mock expectations
+""""""""""""""""""""
+::
+
+    from unittest import mock
+    m = mock.Mock()
+
+=============================== ===============================
+expectation                     corresponding assert
+=============================== ===============================
+expect(m).called                assert m.called
+expect(m).not_called            assert not m.called
+expect(m).called_with(...)      m.assert_any_cal(...)
+=============================== ===============================
 
 
 Files testing
