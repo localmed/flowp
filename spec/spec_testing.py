@@ -35,9 +35,9 @@ class Expect(Behavior):
         expect('abc').ok
         expect(self.obj).ok
 
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(False).ok
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(True).not_ok
 
 
@@ -51,17 +51,17 @@ class Expect(Behavior):
         expect(1) > 0
         expect(2) >= 1
          
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(1) == 2
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect('abc') != 'abc'
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(2) < 2
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(3) <= 2
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(1) > 2
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(0) >= 2
 
     def it_do_other_kind_of_asserts(self):
@@ -72,34 +72,34 @@ class Expect(Behavior):
         expect(self.obj).be(self.obj)
         expect(self.obj).not_be(self.Object())
 
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(1).isinstance(str)
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(1).not_isinstance(int)
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(4).be_in([1,2,3])
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(2).not_be_in([1,2,3])
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(self.obj).be(self.Object())
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(self.obj).not_be(self.obj)
 
     def it_do_mock_expectations(self):
         m = mock.Mock() 
         expect(m).not_called
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(m).called
         m()
         expect(m).called
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(m).not_called
 
         m = mock.Mock()
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(m).called_with(1,2,3)
         m(3,4)
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             expect(m).called_with(1,2,3)
         m(1,2,3)
         expect(m).called_with(1,2,3)
@@ -171,7 +171,7 @@ class WhenFunc(Behavior):
         def test_method(s):
             raise AssertionError()
 
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             test_method = when('text context')(test_method) 
             test_method(self)
     
@@ -179,7 +179,7 @@ class WhenFunc(Behavior):
         def test_method(s, mock):
             raise AssertionError()
 
-        with self.assertRaises(AssertionError):
+        with expect.to_raise(AssertionError):
             test_method = when('text context')(mock.patch('sys.argv')(test_method))
             test_method(self)
 

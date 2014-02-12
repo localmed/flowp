@@ -15,8 +15,8 @@ class Ftypes(Behavior):
         self.fl2 = ftypes.List(['1', '2', '1', '1', '3', '2', '4'])
 
     def it_invokes_types_method_through_this_wrapper(self):
-        assert ftypes.this(self.s).isinstance(ftypes.Str)
-        assert ftypes.this(self.l).hasattr('index')
+        expect(ftypes.this(self.s)).isinstance(ftypes.Str)
+        expect(ftypes.this(self.l).hasattr('index'))
 
     def it_do_methods_chain_operations(self):
         expect(self.fs.split('-').reversed.join('.')) == 'ghi.def.abc'
@@ -26,5 +26,5 @@ class Ftypes(Behavior):
     @unittest.skip("Under development")
     def it_do_methods_chain_operation_on_builtin_types_methods(self):
         expect(self.fnl.flatten.uniq.count(1).str) == '1'
-        expect(self.fs.replace('b', 'z').isinstance(ftypes.Str)).ok
-        expect(self.fs.hasattr('rfind').isinstance(ftypes.BoolAdapter)).ok
+        expect(self.fs.replace('b', 'z')).isinstance(ftypes.Str)
+        expect(self.fs.hasattr('rfind')).isinstance(ftypes.BoolAdapter)
