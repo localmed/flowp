@@ -13,25 +13,15 @@ import glob
 import subprocess
 
 
-class BDDTestCase(type):
-    """Meta class for test case class (Behavior). Creates aliases 
-    for setUp and tearDown methods: before_each and after_each.
-    """
-    def __new__(cls, name, bases, namespace):
-        new_namespace = {}
-        for key, value in namespace.items():
-            if key == 'before_each':
-                new_namespace['setUp'] = value
+class Behavior(unittest.TestCase):
+    def setUp(self):
+        if hasattr(self, 'before_each'):
+            self.before_each()
 
-            if key == 'after_each':
-                new_namespace['tearDown'] = value
+    def tearDown(self):
+        if hasattr(self, 'after_each'):
+            self.after_each()
 
-            new_namespace[key] = value
-
-        return type.__new__(cls, name, bases, new_namespace)
-
-
-class Behavior(unittest.TestCase, metaclass=BDDTestCase):
     @property
     def _test_method(self):
         """Return object of (current) test method."""
