@@ -1,7 +1,7 @@
 from flowp.testing2 import Behavior, expect
 
 
-class Testo(Behavior):
+class TestoMethod(Behavior):
     def test_method(self):
         print('executed')
         assert False
@@ -13,3 +13,10 @@ class Testo(Behavior):
     def it_test_method3(self):
         expect(False).ok
         print('executed3')
+
+    def it_do_something_else(self):
+        expect(True).ok
+
+    class WhenSomethingGiven(Behavior):
+        def it_do_blabla(self):
+            expect(True).ok

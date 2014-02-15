@@ -4,16 +4,49 @@ import re
 import importlib
 import sys
 import inspect
-import logging
 import traceback
+import time
 
 # for traceback passing in test results
 TESTING_MODULE = True
 
 
+class ColorStream(str):
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    COLOR_END = '\033[0m'
+
+    def __init__(self, stream):
+        self._stream = stream
+
+    def write(self, msg):
+        self._stream.write(msg)
+
+    def writeln(self, msg=''):
+        self._stream.write(msg + '\n')
+
+    def red(self, msg):
+        self._stream.write(self.RED + msg + self.COLOR_END)
+
+    def green(self, msg):
+        self._stream.write(self.GREEN + msg + self.COLOR_END)
+
+    def redln(self, msg):
+        self.red(msg)
+        self.writeln()
+
+    def greenln(self, msg):
+        self.green(msg)
+        self.writeln()
+
+
 class Behavior:
     """Test case"""
-    parent_behavior = None
+    parent_behaviors = tuple()
+
+    def __init__(self, method_name, results):
+        self.method_name = method_name
+        self._results = results
 
     def before_each(self):
         pass
@@ -21,37 +54,32 @@ class Behavior:
     def after_each(self):
         pass
 
-
-class ColorLogger:
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    COLOR_END = '\033[0m'
-
-    def __init__(self):
-        formatter = logging.Formatter('%(message)s')
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(formatter)
-        self._logger = logging.getLogger('ColorLogger')
-        self._logger.setLevel(logging.DEBUG)
-        self._logger.addHandler(handler)
-
-    def error(self, msg):
-        self._logger.error(self.RED + msg + self.COLOR_END)
-
-    def info(self, msg):
-        self._logger.info(msg)
-
-    def success(self, msg):
-        self._logger.info(self.GREEN + msg + self.COLOR_END)
+    def run(self):
+        """Run specific test"""
+        method = getattr(self, self.method_name)
+        self._results.start_test()
+        try:
+            # run before methods
+            for parent_behavior in self.parent_behaviors:
+                parent_behavior.before_each(self)
+            self.before_each()
+            # run test method
+            method()
+            # run after methods
+            self.after_each()
+            for parent_behavior in reversed(self.parent_behaviors):
+                parent_behavior.after_each(self)
+        except:
+            self._results.add_failure(sys.exc_info(), self)
+        else:
+            self._results.add_success()
 
 
 class Results:
     """Gather informations about test results"""
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
+        self.stream = ColorStream(sys.stdout)
         self.failures = []
-        self.errors = []
         self.skipped = []
         self.runned_tests_count = 0
 
@@ -64,41 +92,41 @@ class Results:
     def add_success(self):
         pass
 
-    def add_failure(self, exc_info, method_name, behavior):
-        self.failures.append((self._exc_info_to_string(exc_info), method_name, behavior))
+    def add_failure(self, exc_info, behavior):
+        self.failures.append((self._exc_info_to_string(exc_info), behavior))
 
-    def add_error(self, exc_info, method_name, behavior):
-        self.errors.append((self._exc_info_to_string(exc_info), method_name, behavior))
-
-    def get_behaviors_description(self, behavior):
+    def get_behaviors_description(self, behavior: Behavior):
         description = ''
-        if behavior.parent_behavior:
-            description += self.get_behaviors_description(behavior.parent_behavior)
 
-        if inspect.isclass(behavior):
-            description += behavior.__name__
-        else:
-            description += behavior.__class__.__name__
+        for parent_behavior in behavior.parent_behaviors:
+            description += parent_behavior.__name__
+
+        description += behavior.__class__.__name__
+        # Transform camel case to spaces
+        description = re.sub('([a-z0-9])([A-Z])', r'\1 \2', description).lower().capitalize()
         return description
 
-    def print_errors(self):
-        self.print_error_list('ERROR', self.errors)
-        self.print_error_list('FAIL', self.failures)
-
-    def print_error_list(self, flavour, errors):
-        for err, method_name, behavior in errors:
+    def print(self, time_taken):
+        # failures
+        for err, behavior in self.failures:
+            method_name = behavior.method_name.replace('_', ' ')
             description = self.get_behaviors_description(behavior) + ' ' + method_name
-            self.logger.info('----')
-            self.logger.info("%s: %s" % (flavour, description))
-            self.logger.info('----')
-            self.logger.info("%s" % err)
+            self.stream.red("\n%s FAILED\n" % description)
+            self.stream.write("%s\n" % err)
 
-    def print_sum_up(self):
-        errors, failures = len(self.errors), len(self.failures)
-        if not errors and not failures:
-            self.logger.success('TESTS OK')
+        # sum up
+        failures = len(self.failures)
+        self.stream.write('Executed %s ' % self.runned_tests_count)
+        if failures:
+            self.stream.red('(%s FAILED) ' % failures)
         else:
-            self.logger.error('TESTS FAILED')
+            self.stream.green('SUCCESS ')
+        self.stream.writeln('(%.3f sec)' % time_taken)
+
+        # Executed 10 of 123 (skipped 113) SUCCESS (3.450 sec)
+        # Executed 10 of 123 (1 FAILED) (skipped 113) (3.450 sec)
+
+        # test should have be alone FAILED
 
     def _exc_info_to_string(self, err):
         """Converts a sys.exc_info()-style tuple of values into a string."""
@@ -107,8 +135,10 @@ class Results:
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
         length = self._count_relevant_tb_levels(tb)
-        msg_lines = traceback.format_exception(exctype, value, tb, length)
-        return ''.join(msg_lines)
+        msg_lines = traceback.format_exception(exctype, value, tb, length)[1:]
+        msg_lines[-1] = '  ' + msg_lines[-1]
+        msg_lines = ''.join(msg_lines)
+        return msg_lines
 
     def _count_relevant_tb_levels(self, tb):
         length = 0
@@ -150,61 +180,29 @@ class Runner:
     def is_test_function(self, obj):
         return inspect.isfunction(obj) and obj.__name__.startswith(self.test_method_prefix)
 
-    def run_before_each_methods(self, behavior_instance, behavior_class=None):
-        if behavior_class:
-            if behavior_class.parent_behavior:
-                self.run_before_each_methods(behavior_instance, behavior_class.parent_behavior)
-            behavior_class.before_each(behavior_instance)
-        else:
-            if behavior_instance.parent_behavior:
-                self.run_before_each_methods(behavior_instance, behavior_instance.parent_behavior)
-            behavior_instance.before_each()
-
-    def run_after_each_methods(self, behavior_instance, behavior_class=None):
-        if behavior_class:
-            behavior_class.after_each(behavior_instance)
-            if behavior_class.parent_behavior:
-                self.run_after_each_methods(behavior_instance, behavior_class.parent_behavior)
-        else:
-            behavior_instance.after_each()
-            if behavior_instance.parent_behavior:
-                self.run_after_each_methods(behavior_instance, behavior_instance.parent_behavior)
-
-    def run_test_method(self, method_name, results: Results, behavior: Behavior):
-        method = getattr(behavior, method_name)
-        results.start_test()
-        try:
-            self.run_before_each_methods(behavior)
-            method()
-            self.run_after_each_methods(behavior)
-        except AssertionError:
-            results.add_failure(sys.exc_info(), method_name, behavior)
-        except:
-            results.add_error(sys.exc_info(), method_name, behavior)
-        else:
-            results.add_success()
-
     def run_behavior(self, behavior_class, results: Results):
+        """Looking for test methods and other sub-behavior classes in behavior subclass"""
         for attr_name in dir(behavior_class):
+            if attr_name.startswith('_'):
+                continue
             attr = getattr(behavior_class, attr_name)
             if self.is_test_function(attr):
-                print("#2 Executing %s" % attr_name)
-                behavior = behavior_class()
-                # Executing test method
-                self.run_test_method(attr_name, results, behavior)
+                # Run test method
+                behavior_class(attr_name, results).run()
             elif self.is_behavior_class(attr):
-                attr.parent_behavior = behavior_class
+                attr.parent_behaviors = behavior_class.parent_behaviors + (behavior_class,)
                 self.run_behavior(attr, results)
 
     def run(self):
-        logger = ColorLogger()
-        results = Results(logger)
+        """Looking for behavior subclasses in modules"""
+        results = Results()
+        start_time = time.time()
         for module in self.get_spec_modules():
             for BClass in self.get_behavior_classes(module):
-                print('#1', BClass, module)
                 self.run_behavior(BClass, results)
-        results.print_errors()
-        results.print_sum_up()
+        stop_time = time.time()
+        time_taken = stop_time - start_time
+        results.print(time_taken)
 
 
 class expect:
