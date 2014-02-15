@@ -11,4 +11,5 @@ class Testo(testing2.Behavior):
         print('executed2')
 
     def it_test_method3(self):
+        assert False
         print('executed3')
