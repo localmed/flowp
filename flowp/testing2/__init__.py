@@ -7,6 +7,9 @@ import inspect
 import logging
 import traceback
 
+# for traceback passing in test results
+TESTING_MODULE = True
+
 
 class Behavior:
     """Test case"""
@@ -103,11 +106,19 @@ class Results:
         # Skip test runner traceback levels
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
-        msg_lines = traceback.format_exception(exctype, value, tb)
+        length = self._count_relevant_tb_levels(tb)
+        msg_lines = traceback.format_exception(exctype, value, tb, length)
         return ''.join(msg_lines)
 
+    def _count_relevant_tb_levels(self, tb):
+        length = 0
+        while tb and not self._is_relevant_tb_level(tb):
+            length += 1
+            tb = tb.tb_next
+        return length
+
     def _is_relevant_tb_level(self, tb):
-        return '__test' in tb.tb_frame.f_globals
+        return 'TESTING_MODULE' in tb.tb_frame.f_globals
 
 
 class Runner:
@@ -121,7 +132,7 @@ class Runner:
 
     def get_spec_modules(self):
         """Get modules to tests"""
-        files = glob.glob('**/spec_*.py')
+        files = glob.glob('**/%s*.py' % self.spec_file_prefix)
         for fn in files:
             fn = fn.replace(os.path.sep, '.')
             mn = re.sub('\.py$', '', fn)
@@ -194,3 +205,99 @@ class Runner:
                 self.run_behavior(BClass, results)
         results.print_errors()
         results.print_sum_up()
+
+
+class expect:
+    class to_raise:
+        def __init__(self, expected_exc):
+            self.expected_exc = expected_exc
+
+        def __enter__(self):
+            pass
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if not exc_type:
+                raise AssertionError("expected exception %s"
+                                     % self.expected_exc.__name__)
+            return True
+
+    def __init__(self, context):
+        self._context = context
+        self._expected_exception = None
+
+    @property
+    def ok(self):
+        """expect(a).ok"""
+        assert self._context, \
+            "expected %s, given %s" % (True, self._context)
+
+    @property
+    def not_ok(self):
+        """expect(a).not_ok"""
+        assert not self._context, \
+            "expected not %s, given %s" % (True, self._context)
+
+    def __eq__(self, expectation):
+        """expect(a) == b"""
+        assert self._context == expectation, \
+            "expected %s, given %s" % (expectation, self._context)
+
+    def __ne__(self, expectation):
+        """expect(a) != b"""
+        assert self._context != expectation, \
+            "expected %s != %s" % (self._context, expectation)
+
+    def __lt__(self, expectation):
+        """expect(a) < b"""
+        assert self._context < expectation, \
+            "expected %s < %s" % (self._context, expectation)
+
+    def __le__(self, expectation):
+        """expect(a) <= b"""
+        assert self._context <= expectation, \
+            "expected %s <= %s" % (self._context, expectation)
+
+    def __gt__(self, expectation):
+        """expect(a) > b"""
+        assert self._context > expectation, \
+            "expected %s > %s" % (self._context, expectation)
+
+    def __ge__(self, expectation):
+        """expect(a) >= b"""
+        assert self._context >= expectation, \
+            "expected %s >= %s" % (self._context, expectation)
+
+    def isinstance(self, expectation):
+        assert isinstance(self._context, expectation), \
+            "expected %s, given %s" % (expectation, type(self._context))
+
+    def not_isinstance(self, expectation):
+        assert not isinstance(self._context, expectation), \
+            "expected not %s, given %s" % (expectation, type(self._context))
+
+    def be_in(self, expectation):
+        assert self._context in expectation, \
+            "%s not in %s" % (self._context, expectation)
+
+    def not_be_in(self, expectation):
+        assert self._context not in expectation, \
+            "%s in %s" % (self._context, expectation)
+
+    def be(self, expectation):
+        assert self._context is expectation, \
+            "%s is not %s" % (self._context, expectation)
+
+    def not_be(self, expectation):
+        assert self._context is not expectation, \
+            "%s is %s" % (self._context, expectation)
+
+    @property
+    def called(self):
+        assert self._context.called
+
+    @property
+    def not_called(self):
+        assert not self._context.called
+
+    def called_with(self, *args, **kwargs):
+        self._context.assert_any_call(*args, **kwargs)
