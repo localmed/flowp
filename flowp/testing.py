@@ -25,7 +25,7 @@ class Behavior(unittest.TestCase):
     @property
     def _test_method(self):
         """Return object of (current) test method."""
-        return getattr(self, self._testMethodName) 
+        return getattr(self, self._testMethodName)
 
 
 class FileSystemBehavior(Behavior):
