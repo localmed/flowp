@@ -1,11 +1,9 @@
-Flowp 2.0
+Flowp 1.1
 ==========
 Flowp is a library which tries to bring the best ideas from Ruby / node.js
 world to Python making development more fun. For version 1.0 module
 flowp.testing is available which allows to write tests in a RSpec BDD
 style with minimum of magic.
-
-Feedback? Questions? https://groups.google.com/forum/#!forum/flowp
 
 Installation
 ------------
@@ -34,8 +32,10 @@ Changes log
 
 1.1
 ^^^^^^^
-* new modules: flowp.system and flowp.task
-* flowp.testing: support for files system testing
+* new modules: flowp.files and flowp.task
+* flowp.testing: new mechanism completely independent from unittest module,
+  but compatible with unittest.mock
+* flowp.testing: support for files testing
 
 1.0 (2013-12-15)
 ^^^^^^^

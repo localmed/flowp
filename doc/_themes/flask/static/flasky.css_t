@@ -577,12 +577,6 @@ a:hover tt {
 }
 
 /* flowp custom CSS */
-img.terminal-screen {
-    margin: 0px -30px;
-    background-color: #000;
-    padding: 10px 189px 10px 30px;
-}
-
 .sphinxsidebarwrapper li li li ul {
     display: none;
 }

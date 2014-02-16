@@ -109,7 +109,7 @@ class Results:
     def print(self, time_taken):
         # failures
         for err, behavior in self.failures:
-            method_name = behavior.method_name.replace('_', ' ')
+            method_name = behavior.method_name[3:].replace('_', ' ')
             description = self.get_behaviors_description(behavior) + ' ' + method_name
             self.stream.red("\n%s FAILED\n" % description)
             self.stream.write("%s\n" % err)

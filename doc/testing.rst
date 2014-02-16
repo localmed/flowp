@@ -1,35 +1,23 @@
 flowp.testing
---------------
-Module is written on top of builtin unittest module in a very minimalistic way
-with minimum of magic. It provides 4 features of BDD style testing:
-
-* specifications (style for test cases)
-* expectations (style for asserts)
-* behavior contexts
-* specification oriented test runner
-
-In the end it's all about bringing testing style, testing good practices.
+===============
+Module allows to write tests in a RSpec BDD style with minimum of magic and
+maximum of comfort.
 
 Quick start
-^^^^^^^^^^^^
+------------
 Test subject (mymodule.py):
 
 .. code-block:: python
 
-    class SomeObject:
-        def __init__(self, logger=None):
-            self._logger = logger
+    class Calculator:
+        def __init__(self):
+            self.special_mode = False
 
-        def count(self, *args):
-            positives = 0
-            for arg in args:
-                if arg > 0:
-                    positives += 1
-
-            if self._logger:
-                self._logger.info(positives)
-            else:
-                return positives
+        def add(a, b):
+            sum = a + b
+            if self.special_mode:
+                sum += 1
+            return sum
 
 
 Behavior specification (spec_mymodule.py):
@@ -37,100 +25,68 @@ Behavior specification (spec_mymodule.py):
 ..  code-block:: python
 
     import mymodule
-    from flowp.testing import Behavior, when, expect
-    from unittest import mock
+    from flowp.testing import Behavior, expect
 
 
-    class SomeObject(Behavior):
+    class Calculator(Behavior):
         def before_each(self):
-            self.subject = mymodule.SomeObject()
+            self.subject = mymodule.Calculator()
 
-        def logger_given(self):
-            self.logger = mock.Mock()
-            self.subject = mymodule.SomeObject(self.logger)
+        def it_add_numbers(self):
+            expect(self.subject(1, 2)) == 3
 
-        def it_counts_positive_numbers(self):
-            expect(self.subject.count(-1, 2, -3, 4)) == 2
+        class WhenHaveSpecialMode(Behavior):
+            def before_each(self):
+                self.subject.special_mode = True
 
-        @when(logger_given)
-        def it_sends_results_to_logger(self):
-            self.subject.count(-1, 2, -3, 4)
-            expect(self.logger.info).called_with(2)
+            it_add_additional_one(self):
+                expect(self.subject(1, 2)) == 4
 
 ::
 
-    $ python3 -m flowp.testing -v
+    $ python3 -m flowp.testing --watch
 
-
-.. image:: _static/test_runner_ok_results.png
-    :class: terminal-screen
-
-
-Specifications
-^^^^^^^^^^^^^
-Replacement for test cases. Specifications are the way how we want to
-describe objects which we want to create, we specify, describe their
-behaviors.
-That's why test case should have more descriptive character and each
-test method should describe behavior of the object which we want to test.
-
-This have some consequences in the test case construct:
-
-* each test method should start with it_*
-* name of test module should start with spec_*
-* test case class should inherit from 'Behavior' class
-* setUp / tearDown methods are now before_each / after_each methods
-
-.. code-block:: python
-
-    from flowp.testing import Behavior
-
-    class TermLogger(Behavior):
-        def it_log_error_with_red_color(self):
-            ...
-
-        def it_log_info_with_white_color(self):
-            ...
-
-.. note::
-
-    For now there is no before_all / after_all methods but it is planned
-    to add them.
+Giving --watch flag script will be watching on specification files, if
+some changes happen, tests will be reran.
 
 Expectations
-^^^^^^^^^^^^^^
-Expectations are replacement of asserts. They provide better feedback than asserts
+-------------
+Expectations are replacement of asserts. They provide better feedback than asserts,
 similar to self.assert* methods, but they are shorter and easier to remember.
 Example of expectation::
 
     expect(subject) == expected_value
 
-There are many type of expectations.
+::
+
+    expect(subject, 'message for failure') == expected_value
+
 
 Basic expectations
-""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^
 
-=============================== ===============================
-expectation                     corresponding assert
-=============================== ===============================
-expect(a).ok                    assert a
-expect(a).not_ok                assert not a
-expect(a) == b                  assert a == b
-expect(a) != b                  assert a != b
-expect(a) < b                   assert a < b
-expect(a) > b                   assert a > b
-expect(a) >= b                  assert a >= b
-expect(a) <= b                  assert a <= b
-expect(a).isinstance(b)         assert isinstance(a, b)
-expect(a).not_isinstance(b)     assert not isinstance(a, b)
-expect(a).be_in(b)              assert a in b
-expect(a).not_be_in(b)          assert a not in b
-expect(a).be(b)                 assert a is b
-expect(a).not_be(b)             assert a is not b
-=============================== ===============================
+==================================== ===============================
+expectation                          corresponding assert
+==================================== ===============================
+expect(a).to_be(True)                assert a
+expect(a).to_be(False)               assert not a
+expect(a) == b                       assert a == b
+expect(a) != b                       assert a != b
+expect(a) < b                        assert a < b
+expect(a) > b                        assert a > b
+expect(a) >= b                       assert a >= b
+expect(a) <= b                       assert a <= b
+expect(a).to_be(b)                   assert a is b
+expect(a).not_to_be(b)               assert a is not b
+expect(a).to_be_in(b)                assert a in b
+expect(a).not_to_be_in(b)            assert a not in b
+expect(a).to_be_instance_of(b)       assert isinstance(a, b)
+expect(a).not_to_be_instance_of(b)   assert not isinstance(a, b)
+==================================== ===============================
+
 
 Exception expectation
-"""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -139,18 +95,14 @@ Exception expectation
 
 
 
-Mock expectations
-""""""""""""""""""""
-link to mocking...
-
 
 Custom expectations
-""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^
 
 You can also create Your own expectations. 'expect' is a normal class
 (but with lowercased name), which implements methods such a '__eq__' or
-'ok', so You can write Your own expect class which will inherit from
-the original one.
+'ok', so You can write Your own expect class by inheriting from the
+original one.
 
 .. code-block:: python
 
@@ -167,88 +119,73 @@ the original one.
     expect(2).is_equal_to(2)
 
 
-Behavior contexts
-^^^^^^^^^^^^^^
-It is possible to give contexts for specific behaviors by @when decorator.
-Decorator can take as an argument generator or string. When it receive generator
-it will treat it as a context manager, string will be only used for test runner
-results.
+Behaviors
+--------------
 
+Behaviors are the containers for tests.
+Each of them should describe an object or special context which we want to test.
 
-.. code-block:: python
+Behaviors can be nested, in that case during each test
+execution current and all of upper before / after methods will be executed
+with the 'self' context of tested behavior.
 
-    class User(Behavior):
-        def logged_as_admin(self):
-            # do some before actions
-            yield
-            # do some after actions
-
-        @when(logged_as_admin):
-        def it_can_delete_posts(self):
-            pass
-
-        @when(logged_as_admin):
-        def it_can_add_new_users(self):
-            pass
-
-        @when('executing login'):
-        def it_rejects_not_registered(self):
-            pass
-
-
-'yield' statement define the border between setup/teardown actions,
-like in contextlib.contextmanager module but for tests. Context method
-can be also used without yield statement and then it will behave like an
-only setup context.
-
-We can also use many contexts together:
+Draft of execution process for nested test:
 
 .. code-block:: python
 
-    class User(Behavior):
-        def executing_login(self):
-            ...
+    b2 = B2()
 
-        def user_not_registered(self):
-            ...
+    B1.before_each(b2)
+    b2.before_each()
+    b2.it_method()
+    b2.after_each()
+    B1.after_each(b2)
 
-        def user_registered(self):
-            ...
+Example of structure:
 
-        @when(executing_login, user_not_registered)
-        def it_interrupts_process(self):
-            ...
+.. code-block:: python
 
-        @when(executing_login, user_registered)
-        def it_pass_process(self):
-            ...
+    class B1(Behavior):
+        def before_each(self):
+            pass
 
-Unfortunately test methods with identical names will collide even if they
-have different contexts in when decorator. For now there is no solution for
-this, they just need different names.
+        def after_each(self):
+            pass
 
-Specifications runner
-^^^^^^^^^^^^^
-Flowp add some additional features to standard unittest test runner:
+        class B2(Behavior):
+            def before_each(self):
+                pass
 
-* coloring
-* descriptive character results
-* results context oriented (cooperation with @when)
-* reformatted fails feedback (more minimalistic with colors)
-* 2 new script options (-a --auto and --nocolors)
+            def after_each(self):
+                pass
 
-.. image:: _static/test_runner_fail_results.png
-    :class: terminal-screen
+            def it_method(self):
+                pass
 
-Specifications runner fired with option --auto (-a)::
+Runner
+--------
+Tests can be easily run by command::
 
-    python3 -m flowp.testing --auto
+    $ python3 -m flowp.testing
 
-will be automatically rerunning specs, after each 4 seconds.
+Runner will be looking for 'spec_*.py' files in the current directory and its subdirectories
+and then for Behavior subclasses. Methods which name starts with 'it_' will
+be treated as test methods.
+
+@skip
+^^^^^^^
+
+Skips tests. Can be used on behavior class or test method.
+
+@only
+^^^^^^^
+Opposite of skip. It will execute behaviors or methods which have @only decorator rest
+will be skipped.
 
 
 Mocking
-^^^^^^^^^^^^^^^
+--------
+flowp.testing module is compatible with unittest.mock
 Very simple mocking:
 
 * self.mock is a mocks factory
@@ -267,40 +204,49 @@ Very simple mocking:
         def it_do_some_stuff(self):
             ...
 
-
-Mock expectations
-""""""""""""""""""""
 ::
 
-    from unittest import mock
-    m = mock.Mock()
+    self.mock('time.time')
 
-=============================== ===============================
-expectation                     corresponding assert
-=============================== ===============================
-expect(m).called                assert m.called
-expect(m).not_called            assert not m.called
-expect(m).called_with(...)      m.assert_any_cal(...)
-=============================== ===============================
+::
+
+    self.mock(obj, 'attr_name')
+
+::
+
+    self.mock(target=None, attr=None, spec=None, new=None)
+
+
+Mock expectations
+^^^^^^^^^^^^^^^^^^
+
+======================================== ===============================
+expectation                              corresponding assert
+======================================== ===============================
+expect(m).to_have_been_called()          assert m.called
+expect(m).to_have_been_called(n)         assert m.call_count == n
+expect(m).not_to_have_been_called()      assert not m.called
+expect(m).to_have_been_called_with(...)  m.assert_any_cal(...)
+======================================== ===============================
 
 
 Files testing
-^^^^^^^^^^^^^^^
+---------------
 Example:
 
 .. code-block:: python
 
-    from flowp.testing import FileSystemBehavior, expect
-    from flowp.system import touch, exist
+    from flowp.testing import FilesBehavior, expect
+    from flowp.files import touch, exist
 
-    class Touch(FileSystemBehavior):
+    class Touch(FilesBehavior):
         def before_each(self):
             super().before_each()
             # do some preparations
 
         def it_create_file(self):
             touch('testfile')
-            expect(exist('testfile')).ok
+            expect(exist('testfile')).to_be(True)
 
 .. autoclass:: flowp.testing.FileSystemBehavior
     :members: before_each, after_each, reset_cwd

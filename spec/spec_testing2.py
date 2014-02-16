@@ -20,3 +20,4 @@ class TestoMethod(Behavior):
     class WhenSomethingGiven(Behavior):
         def it_do_blabla(self):
             expect(True).ok
+            assert False
