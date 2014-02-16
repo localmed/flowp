@@ -211,12 +211,14 @@ still use unittest.mock .
 
 .. code-block:: python
 
+    import mymodule
     from flowp.testing2 import Behavior, expect
 
 
     class MyObject(Behavior)
         def before_each(self):
-            self.m = self.mock('somemodule.element')
+            self.m = self.mock('somemodule.somemethod')
+            self.subject = mymodule.MyObject()
 
         def it_do_some_action(self):
             expect(m).to_have_been_called()

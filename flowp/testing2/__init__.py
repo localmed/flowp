@@ -84,9 +84,9 @@ class Behavior:
             name of attribute to patch (used only when target
             is an object instance)
         :param new:
-            aaaa
+            object which will be returned instead of default mock
         :param spec:
-            bbbb
+            list of attributes which mock should have
         :rtype:
             unittest.mock.Mock if new==None
         """
@@ -232,7 +232,7 @@ class expect:
             pass
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            if not exc_type:
+            if exc_type is not self.expected_exc:
                 raise AssertionError("expected exception %s"
                                      % self.expected_exc.__name__)
             return True
@@ -241,17 +241,21 @@ class expect:
         self._context = context
         self._expected_exception = None
 
-    @property
-    def ok(self):
-        """expect(a).ok"""
-        assert self._context, \
-            "expected %s, given %s" % (True, self._context)
+    def to_be(self, expectation):
+        if isinstance(expectation, bool):
+            assert bool(self._context) == expectation, \
+                "expected %s, given %s" % (True, self._context)
+        else:
+            assert self._context is expectation, \
+                "%s is not %s" % (self._context, expectation)
 
-    @property
-    def not_ok(self):
-        """expect(a).not_ok"""
-        assert not self._context, \
-            "expected not %s, given %s" % (True, self._context)
+    def not_to_be(self, expectation):
+        if isinstance(expectation, bool):
+            assert not bool(self._context) == expectation, \
+                "expected not %s, given %s" % (True, self._context)
+        else:
+            assert self._context is not expectation, \
+                "%s is %s" % (self._context, expectation)
 
     def __eq__(self, expectation):
         """expect(a) == b"""
@@ -283,37 +287,27 @@ class expect:
         assert self._context >= expectation, \
             "expected %s >= %s" % (self._context, expectation)
 
-    def isinstance(self, expectation):
+    def to_be_instance_of(self, expectation):
         assert isinstance(self._context, expectation), \
             "expected %s, given %s" % (expectation, type(self._context))
 
-    def not_isinstance(self, expectation):
+    def not_to_be_instance_of(self, expectation):
         assert not isinstance(self._context, expectation), \
             "expected not %s, given %s" % (expectation, type(self._context))
 
-    def be_in(self, expectation):
+    def to_be_in(self, expectation):
         assert self._context in expectation, \
             "%s not in %s" % (self._context, expectation)
 
-    def not_be_in(self, expectation):
+    def not_to_be_in(self, expectation):
         assert self._context not in expectation, \
             "%s in %s" % (self._context, expectation)
 
-    def be(self, expectation):
-        assert self._context is expectation, \
-            "%s is not %s" % (self._context, expectation)
-
-    def not_be(self, expectation):
-        assert self._context is not expectation, \
-            "%s is %s" % (self._context, expectation)
-
-    @property
-    def called(self):
+    def to_have_been_called(self):
         assert self._context.called
 
-    @property
-    def not_called(self):
+    def not_to_have_been_called(self):
         assert not self._context.called
 
-    def called_with(self, *args, **kwargs):
+    def to_have_been_called_with(self, *args, **kwargs):
         self._context.assert_any_call(*args, **kwargs)
