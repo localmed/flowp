@@ -1,5 +1,6 @@
 from flowp.testing2 import Behavior, expect
 from unittest import mock
+import flowp.testing2.dummy
 
 
 class Expect(Behavior):
@@ -165,3 +166,47 @@ class Expect(Behavior):
             expect(self.m).to_have_been_called(2)
             with expect.to_raise(AssertionError):
                 expect(self.m).to_have_been_called(1)
+
+
+class BehaviorInstance(Behavior):
+    class MockMethod(Behavior):
+        def it_creates_mocks(self):
+            m = self.mock()
+            expect(m).to_be_instance_of(mock.Mock)
+
+        def it_patch_concrete_places(self):
+            expect(flowp.testing2.dummy.test_var1) == 0
+            self.mock('flowp.testing2.dummy.test_var1', new=1)
+            expect(flowp.testing2.dummy.test_var1) == 1
+
+        def it_patch_object_attributes(self):
+            class Obj:
+                pass
+            o = Obj()
+            o.a = 0
+            self.mock(o, 'a', new=1)
+            expect(o.a) == 1
+
+        def it_creates_mocks_with_attributes_specification(self):
+            pass
+
+        class WhenNewAttributeGiven(Behavior):
+            def it_return_object_given_by_new(self):
+                pass
+
+    class RunMethod(Behavior):
+        def it_removes_mocks_patchers_after_each_test_method0(self):
+            expect(flowp.testing2.dummy.test_var1) == 0
+            expect(flowp.testing2.dummy.test_var2) == 0
+            self.mock('flowp.testing2.dummy.test_var1', new=1)
+            self.mock('flowp.testing2.dummy.test_var2', new=1)
+            expect(flowp.testing2.dummy.test_var1) == 1
+            expect(flowp.testing2.dummy.test_var2) == 1
+
+        def it_removes_mocks_patchers_after_each_test_method(self):
+            expect(flowp.testing2.dummy.test_var1) == 0
+            expect(flowp.testing2.dummy.test_var2) == 0
+            self.mock('flowp.testing2.dummy.test_var1', new=1)
+            self.mock('flowp.testing2.dummy.test_var2', new=1)
+            expect(flowp.testing2.dummy.test_var1) == 1
+            expect(flowp.testing2.dummy.test_var2) == 1

@@ -70,12 +70,14 @@ class Behavior:
             self.after_each()
             for parent_behavior in reversed(self.parent_behaviors):
                 parent_behavior.after_each(self)
+            # stop patchers
+            mock.patch.stopall()
         except:
             self._results.add_failure(sys.exc_info(), self)
         else:
             self._results.add_success()
 
-    def mock(self, target=None, attr=None, new=None, spec=None):
+    def mock(self, target=None, attr=None, new=mock.DEFAULT, spec=None):
         """Create a mock and register it at behavior mocks manager.
 
         :param target:
@@ -90,7 +92,15 @@ class Behavior:
         :rtype:
             unittest.mock.Mock if new==None
         """
-        pass
+        patcher = None
+        if target and attr:
+            patcher = mock.patch.object(target, attr, new=new, spec=spec)
+        elif target:
+            patcher = mock.patch(target, new=new, spec=spec)
+
+        if patcher:
+            return patcher.start()
+        return mock.Mock(spec=spec)
 
 
 class Results:
