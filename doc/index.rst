@@ -33,8 +33,8 @@ Changes log
 1.1
 ^^^^^^^
 * new modules: flowp.files and flowp.task
-* flowp.testing: new mechanism completely independent from unittest module,
-  but compatible with unittest.mock
+* flowp.testing: new mechanism independent from unittest module,
+  uses only unittest.mock for mocking capabilities
 * flowp.testing: support for files testing
 
 1.0 (2013-12-15)

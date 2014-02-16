@@ -185,36 +185,41 @@ will be skipped.
 
 Mocking
 --------
-flowp.testing module is compatible with unittest.mock
-Very simple mocking:
+Behavior class instance provides general 'mock' factory method which creates and register mocks.
+Mocks will be taken off in proper after test methods automatically.
 
-* self.mock is a mocks factory
-* it returns MagicMock each time as default
-* it can be used as patcher if first argument given
-  (mock factory holds reference and it will unpatch mock after each test)
-* have type arg (type='magicmock')
-* work as patch.object: self.mock(object, 'attr_name')
+Mock method uses unittest.mock underneath, but it makes mocking
+more simple and consistent for 90% of use cases. For the rest of 10% You can
+still use unittest.mock .
+
+
+.. automethod:: flowp.testing2.Behavior.mock
+
+*Basic use cases*::
+
+    m = self.mock('time.time')             # mock specific place
+
+::
+
+    m = self.mock(obj, 'attr_name')        # mock attribute on object
+
+::
+
+    m = self.mock()                        # just return new mock
+
+*Example*:
 
 .. code-block:: python
 
-    class MyObject(Behavior):
+    from flowp.testing2 import Behavior, expect
+
+
+    class MyObject(Behavior)
         def before_each(self):
-            self.mocked_logger = self.mock('logger')
+            self.m = self.mock('somemodule.element')
 
-        def it_do_some_stuff(self):
-            ...
-
-::
-
-    self.mock('time.time')
-
-::
-
-    self.mock(obj, 'attr_name')
-
-::
-
-    self.mock(target=None, attr=None, spec=None, new=None)
+        def it_do_some_action(self):
+            expect(m).to_have_been_called()
 
 
 Mock expectations

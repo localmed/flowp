@@ -6,6 +6,7 @@ import sys
 import inspect
 import traceback
 import time
+from unittest import mock
 
 # for traceback passing in test results
 TESTING_MODULE = True
@@ -73,6 +74,23 @@ class Behavior:
             self._results.add_failure(sys.exc_info(), self)
         else:
             self._results.add_success()
+
+    def mock(self, target=None, attr=None, new=None, spec=None):
+        """Create a mock and register it at behavior mocks manager.
+
+        :param target:
+            place to patch
+        :param attr:
+            name of attribute to patch (used only when target
+            is an object instance)
+        :param new:
+            aaaa
+        :param spec:
+            bbbb
+        :rtype:
+            unittest.mock.Mock if new==None
+        """
+        pass
 
 
 class Results:
