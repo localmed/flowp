@@ -1,4 +1,5 @@
 from flowp.testing2 import Behavior, expect
+from unittest import mock
 
 
 class Expect(Behavior):
@@ -79,3 +80,88 @@ class Expect(Behavior):
             except AssertionError:
                 cought = True
             expect(cought).to_be(True)
+
+    def it_should_do_equality_asserts(self):
+        expect(1) == 1
+        expect(1) != 2
+        expect(2) < 3
+        expect(3) > 2
+        expect(2) <= 2
+        expect(3) >= 2
+
+        with expect.to_raise(AssertionError):
+            expect(1) == 2
+        with expect.to_raise(AssertionError):
+            expect(2) != 2
+        with expect.to_raise(AssertionError):
+            expect(3) < 2
+        with expect.to_raise(AssertionError):
+            expect(2) > 3
+        with expect.to_raise(AssertionError):
+            expect(3) <= 2
+        with expect.to_raise(AssertionError):
+            expect(2) >= 3
+
+    def it_should_do_instance_of_asserts(self):
+        class Test:
+            pass
+        obj = Test()
+        expect(1).to_be_instance_of(int)
+        expect(obj).to_be_instance_of(Test)
+
+        with expect.to_raise(AssertionError):
+            expect(1).to_be_instance_of(str)
+        with expect.to_raise(AssertionError):
+            expect(obj).to_be_instance_of(int)
+            
+    def it_should_do_not_instance_of_asserts(self):
+        class Test:
+            pass
+        obj = Test()
+        expect(1).not_to_be_instance_of(str)
+        expect(obj).not_to_be_instance_of(int)
+
+        with expect.to_raise(AssertionError):
+            expect(1).not_to_be_instance_of(int)
+        with expect.to_raise(AssertionError):
+            expect(obj).not_to_be_instance_of(Test)
+
+    def it_should_do_in_asserts(self):
+        expect(1).to_be_in([1, 2, 3])
+        with expect.to_raise(AssertionError):
+            expect(4).to_be_in([1, 2, 3])
+
+    def it_should_do_not_in_asserts(self):
+        expect(4).not_to_be_in([1, 2, 3])
+        with expect.to_raise(AssertionError):
+            expect(1).not_to_be_in([1, 2, 3])
+
+    class MockExpectations(Behavior):
+        def before_each(self):
+            self.m = mock.Mock()
+
+        def it_should_do_called_assert(self):
+            self.m()
+            expect(self.m).to_have_been_called()
+            self.m.reset_mock()
+            with expect.to_raise(AssertionError):
+                expect(self.m).to_have_been_called()
+
+        def it_should_do_not_called_assert(self):
+            expect(self.m).not_to_have_been_called()
+            self.m()
+            with expect.to_raise(AssertionError):
+                expect(self.m).not_to_have_been_called()
+
+        def it_should_do_called_with_assert(self):
+            self.m(1, 2, 3)
+            expect(self.m).to_have_been_called_with(1, 2, 3)
+            with expect.to_raise(AssertionError):
+                expect(self.m).to_have_been_called_with(0, 2, 3)
+
+        def it_should_do_called_n_times_assert(self):
+            self.m()
+            self.m()
+            expect(self.m).to_have_been_called(2)
+            with expect.to_raise(AssertionError):
+                expect(self.m).to_have_been_called(1)

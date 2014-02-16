@@ -303,8 +303,13 @@ class expect:
         assert self._context not in expectation, \
             "%s in %s" % (self._context, expectation)
 
-    def to_have_been_called(self):
-        assert self._context.called
+    def to_have_been_called(self, count=None):
+        if isinstance(count, int):
+            assert self._context.call_count == count, \
+                "expected %s mock calls, actual %s" % \
+                (count, self._context.call_count)
+        else:
+            assert self._context.called
 
     def not_to_have_been_called(self):
         assert not self._context.called
