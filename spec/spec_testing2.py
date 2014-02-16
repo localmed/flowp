@@ -170,43 +170,73 @@ class Expect(Behavior):
 
 class BehaviorInstance(Behavior):
     class MockMethod(Behavior):
-        def it_creates_mocks(self):
-            m = self.mock()
-            expect(m).to_be_instance_of(mock.Mock)
+        class WhenTargetNotGiven(Behavior):
+            def it_creates_mocks(self):
+                m = self.mock()
+                expect(m).to_be_instance_of(mock.Mock)
 
-        def it_patch_concrete_places(self):
-            expect(flowp.testing2.dummy.test_var1) == 0
-            self.mock('flowp.testing2.dummy.test_var1', new=1)
-            expect(flowp.testing2.dummy.test_var1) == 1
+            def it_creates_mocks_with_attributes_specification(self):
+                m = self.mock(spec=['a'])
+                m.a
+                with expect.to_raise(AttributeError):
+                    m.b
 
-        def it_patch_object_attributes(self):
-            class Obj:
-                pass
-            o = Obj()
-            o.a = 0
-            self.mock(o, 'a', new=1)
-            expect(o.a) == 1
+        class WhenTargetGiven(Behavior):
+            def it_patch_concrete_places(self):
+                expect(flowp.testing2.dummy.test_var) == 0
+                m = self.mock('flowp.testing2.dummy.test_var')
+                expect(flowp.testing2.dummy.test_var)\
+                    .to_be_instance_of(mock.Mock)
+                expect(m).to_be(flowp.testing2.dummy.test_var)
 
-        def it_creates_mocks_with_attributes_specification(self):
-            pass
+            def it_patch_with_new_parameter(self):
+                expect(flowp.testing2.dummy.test_var) == 0
+                self.mock('flowp.testing2.dummy.test_var', new=1)
+                expect(flowp.testing2.dummy.test_var) == 1
 
-        class WhenNewAttributeGiven(Behavior):
-            def it_return_object_given_by_new(self):
-                pass
+            def it_patch_with_attributes_specification(self):
+                expect(flowp.testing2.dummy.test_var) == 0
+                m = self.mock('flowp.testing2.dummy.test_var', spec=['a'])
+                flowp.testing2.dummy.test_var.a
+                with expect.to_raise(AttributeError):
+                    flowp.testing2.dummy.test_var.b
+
+        class WhenTargetAndAttrGiven(Behavior):
+            def before_each(self):
+                class Object:
+                    pass
+                self.o = Object()
+                self.o.a = 0
+
+            def it_patch_object_attributes(self):
+                m = self.mock(self.o, 'a')
+                expect(self.o.a).to_be_instance_of(mock.Mock)
+                expect(m).to_be(self.o.a)
+
+            def it_patch_with_new_parameter(self):
+                self.mock(self.o, 'a', new=1)
+                expect(self.o.a) == 1
+
+            def it_patch_with_attributes_specification(self):
+                expect(flowp.testing2.dummy.test_var) == 0
+                self.mock(self.o, 'a', spec=['a'])
+                self.o.a
+                with expect.to_raise(AttributeError):
+                    self.o.a.c
 
     class RunMethod(Behavior):
         def it_removes_mocks_patchers_after_each_test_method0(self):
-            expect(flowp.testing2.dummy.test_var1) == 0
-            expect(flowp.testing2.dummy.test_var2) == 0
-            self.mock('flowp.testing2.dummy.test_var1', new=1)
-            self.mock('flowp.testing2.dummy.test_var2', new=1)
-            expect(flowp.testing2.dummy.test_var1) == 1
-            expect(flowp.testing2.dummy.test_var2) == 1
+            expect(flowp.testing2.dummy.test_var) == 0
+            expect(flowp.testing2.dummy.test_obj.a) == 0
+            self.mock('flowp.testing2.dummy.test_var', new=1)
+            self.mock(flowp.testing2.dummy.test_obj, 'a', new=1)
+            expect(flowp.testing2.dummy.test_var) == 1
+            expect(flowp.testing2.dummy.test_obj.a) == 1
 
         def it_removes_mocks_patchers_after_each_test_method(self):
-            expect(flowp.testing2.dummy.test_var1) == 0
-            expect(flowp.testing2.dummy.test_var2) == 0
-            self.mock('flowp.testing2.dummy.test_var1', new=1)
-            self.mock('flowp.testing2.dummy.test_var2', new=1)
-            expect(flowp.testing2.dummy.test_var1) == 1
-            expect(flowp.testing2.dummy.test_var2) == 1
+            expect(flowp.testing2.dummy.test_var) == 0
+            expect(flowp.testing2.dummy.test_obj.a) == 0
+            self.mock('flowp.testing2.dummy.test_var', new=1)
+            self.mock(flowp.testing2.dummy.test_obj, 'a', new=1)
+            expect(flowp.testing2.dummy.test_var) == 1
+            expect(flowp.testing2.dummy.test_obj.a) == 1

@@ -86,7 +86,8 @@ class Behavior:
             name of attribute to patch (used only when target
             is an object instance)
         :param new:
-            object which will be returned instead of default mock
+            object which will be returned instead of default mock,
+            used only when target is given
         :param spec:
             list of attributes which mock should have
         :rtype:
