@@ -41,14 +41,14 @@ class ColorStream(str):
         self.writeln()
 
 
-def only(func):
-    func.only_mode = True
-    return func
+def only(obj):
+    obj._only_mode = True
+    return obj
 
 
-def skip(func):
-    func.skipped = True
-    return func
+def skip(obj):
+    obj._skipped = True
+    return obj
 
 
 class Behavior:
@@ -58,6 +58,22 @@ class Behavior:
     def __init__(self, method_name, results):
         self.method_name = method_name
         self._results = results
+
+    def _have_only_mode(self):
+        if hasattr(self, '_only_mode'):
+            return True
+        for pbehavior in self.parent_behaviors:
+            if hasattr(pbehavior, '_only_mode'):
+                return True
+        return False
+
+    def _is_skipped(self):
+        if hasattr(self, '_skipped'):
+            return True
+        for pbehavior in self.parent_behaviors:
+            if hasattr(pbehavior, '_skipped'):
+                return True
+        return False
 
     def before_each(self):
         pass
@@ -69,10 +85,11 @@ class Behavior:
         """Run specific test"""
         method = getattr(self, self.method_name)
         self._results.start_test()
-        if only_mode and not hasattr(method, 'only_mode'):
+        if only_mode and (not hasattr(method, '_only_mode') and
+                          not self._have_only_mode()):
             self._results.add_skipped()
             return None
-        if hasattr(method, 'skipped'):
+        if self._is_skipped() or hasattr(method, '_skipped'):
             self._results.add_skipped()
             return None
         try:
@@ -181,11 +198,6 @@ class Results:
             self.stream.green('SUCCESS ')
         self.stream.writeln('(%.3f sec)' % time_taken)
 
-        # Executed 10 of 123 (skipped 113) SUCCESS (3.450 sec)
-        # Executed 10 of 123 (1 FAILED) (skipped 113) (3.450 sec)
-
-        # test should have be alone FAILED
-
     def _exc_info_to_string(self, err):
         """Converts a sys.exc_info()-style tuple of values into a string."""
         exctype, value, tb = err
@@ -243,6 +255,8 @@ class Runner:
 
     def load_tests(self, behavior_class, results: Results):
         """Load tests from behavior class"""
+        if hasattr(behavior_class, '_only_mode'):
+            self.only_mode = True
         for attr_name in dir(behavior_class):
             if attr_name.startswith('_'):
                 continue
@@ -250,7 +264,7 @@ class Runner:
             if self.is_test_function(attr):
                 behavior = behavior_class(attr_name, results)
                 self.loaded_tests.append(behavior)
-                if hasattr(attr, 'only_mode'):
+                if hasattr(attr, '_only_mode'):
                     self.only_mode = True
             elif self.is_behavior_class(attr):
                 attr.parent_behaviors = \
