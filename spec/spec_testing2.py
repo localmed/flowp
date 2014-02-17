@@ -196,10 +196,15 @@ class BehaviorInstance(Behavior):
 
             def it_patch_with_attributes_specification(self):
                 expect(flowp.testing2.dummy.test_var) == 0
-                m = self.mock('flowp.testing2.dummy.test_var', spec=['a'])
+                self.mock('flowp.testing2.dummy.test_var', spec=['a'])
                 flowp.testing2.dummy.test_var.a
                 with expect.to_raise(AttributeError):
                     flowp.testing2.dummy.test_var.b
+
+            def it_raise_an_error_if_target_is_not_a_string(self):
+                o = object()
+                with expect.to_raise(TypeError):
+                    self.mock(o)
 
         class WhenTargetAndAttrGiven(Behavior):
             def before_each(self):

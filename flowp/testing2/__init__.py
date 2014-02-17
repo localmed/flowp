@@ -41,6 +41,16 @@ class ColorStream(str):
         self.writeln()
 
 
+def only(func):
+    func.only_mode = True
+    return func
+
+
+def skip(func):
+    func.skipped = True
+    return func
+
+
 class Behavior:
     """Test case"""
     parent_behaviors = tuple()
@@ -55,11 +65,18 @@ class Behavior:
     def after_each(self):
         pass
 
-    def run(self):
+    def run(self, only_mode=False):
         """Run specific test"""
         method = getattr(self, self.method_name)
         self._results.start_test()
+        if only_mode and not hasattr(method, 'only_mode'):
+            self._results.add_skipped()
+            return None
+        if hasattr(method, 'skipped'):
+            self._results.add_skipped()
+            return None
         try:
+            self._results.add_executed()
             # run before methods
             for parent_behavior in self.parent_behaviors:
                 parent_behavior.before_each(self)
@@ -86,8 +103,8 @@ class Behavior:
             name of attribute to patch (used only when target
             is an object instance)
         :param new:
-            object which will be returned instead of default mock,
-            used only when target is given
+            object which will be returned instead of default mock
+            (used only when target is given)
         :param spec:
             list of attributes which mock should have
         :rtype:
@@ -97,6 +114,9 @@ class Behavior:
         if target and attr:
             patcher = mock.patch.object(target, attr, new=new, spec=spec)
         elif target:
+            if not isinstance(target, str):
+                raise TypeError("If attr not given target should be a string, %s given" %
+                                type(target))
             patcher = mock.patch(target, new=new, spec=spec)
 
         if patcher:
@@ -109,17 +129,24 @@ class Results:
     def __init__(self):
         self.stream = ColorStream(sys.stdout)
         self.failures = []
-        self.skipped = []
-        self.runned_tests_count = 0
+        self.skipped = 0
+        self.started = 0
+        self.executed = 0
 
     def start_test(self):
-        self.runned_tests_count += 1
+        self.started += 1
 
     def stop_test(self):
         pass
 
     def add_success(self):
         pass
+
+    def add_skipped(self):
+        self.skipped += 1
+
+    def add_executed(self):
+        self.executed += 1
 
     def add_failure(self, exc_info, behavior):
         self.failures.append((self._exc_info_to_string(exc_info), behavior))
@@ -145,7 +172,9 @@ class Results:
 
         # sum up
         failures = len(self.failures)
-        self.stream.write('Executed %s ' % self.runned_tests_count)
+        self.stream.write('Executed %s of %s ' % (self.executed, self.started))
+        if self.skipped:
+            self.stream.write('(%s skipped) ' % self.skipped)
         if failures:
             self.stream.red('(%s FAILED) ' % failures)
         else:
@@ -187,7 +216,16 @@ class Runner:
     behavior_cls = Behavior
 
     def __init__(self):
-        pass
+        self.loaded_tests = []
+        self.only_mode = False
+
+    def is_behavior_class(self, obj):
+        return inspect.isclass(obj) and \
+            issubclass(obj, self.behavior_cls)
+
+    def is_test_function(self, obj):
+        return inspect.isfunction(obj) and \
+            obj.__name__.startswith(self.test_method_prefix)
 
     def get_spec_modules(self):
         """Get modules to tests"""
@@ -203,32 +241,33 @@ class Runner:
             if self.is_behavior_class(attr):
                 yield attr
 
-    def is_behavior_class(self, obj):
-        return inspect.isclass(obj) and issubclass(obj, self.behavior_cls)
-
-    def is_test_function(self, obj):
-        return inspect.isfunction(obj) and obj.__name__.startswith(self.test_method_prefix)
-
-    def run_behavior(self, behavior_class, results: Results):
-        """Looking for test methods and other sub-behavior classes in behavior subclass"""
+    def load_tests(self, behavior_class, results: Results):
+        """Load tests from behavior class"""
         for attr_name in dir(behavior_class):
             if attr_name.startswith('_'):
                 continue
             attr = getattr(behavior_class, attr_name)
             if self.is_test_function(attr):
-                # Run test method
-                behavior_class(attr_name, results).run()
+                behavior = behavior_class(attr_name, results)
+                self.loaded_tests.append(behavior)
+                if hasattr(attr, 'only_mode'):
+                    self.only_mode = True
             elif self.is_behavior_class(attr):
-                attr.parent_behaviors = behavior_class.parent_behaviors + (behavior_class,)
-                self.run_behavior(attr, results)
+                attr.parent_behaviors = \
+                    behavior_class.parent_behaviors + (behavior_class,)
+                self.load_tests(attr, results)
 
     def run(self):
         """Looking for behavior subclasses in modules"""
         results = Results()
         start_time = time.time()
+        # Load tests
         for module in self.get_spec_modules():
             for BClass in self.get_behavior_classes(module):
-                self.run_behavior(BClass, results)
+                self.load_tests(BClass, results)
+        # Run tests
+        for behavior in self.loaded_tests:
+            behavior.run(self.only_mode)
         stop_time = time.time()
         time_taken = stop_time - start_time
         results.print(time_taken)
