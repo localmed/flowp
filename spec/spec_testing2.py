@@ -2,6 +2,7 @@ from flowp.testing2 import Behavior, expect, only, skip
 from unittest import mock
 import flowp.testing2.dummy
 
+expect_alias = expect
 
 class Expect(Behavior):
     class ToBeMethod(Behavior):
@@ -230,6 +231,20 @@ class BehaviorInstance(Behavior):
                     self.o.a.c
 
     class RunMethod(Behavior):
+        def before_each(self):
+            class TestBehavior(Behavior):
+                executed = False
+
+                def it_is_test(self):
+                    self.executed = True
+
+            self.expect = expect
+            self.results = self.mock()
+            self.pbehavior1 = self.mock(spec=['before_each', 'after_each'])
+            self.pbehavior2 = self.mock(spec=['before_each', 'after_each'])
+            self.behavior = TestBehavior('it_is_test', self.results)
+            self.behavior.parent_behaviors = (self.pbehavior1, self.pbehavior2)
+
         def it_removes_mocks_patchers_after_each_test_method0(self):
             expect(flowp.testing2.dummy.test_var) == 0
             expect(flowp.testing2.dummy.test_obj.a) == 0
@@ -245,3 +260,59 @@ class BehaviorInstance(Behavior):
             self.mock(flowp.testing2.dummy.test_obj, 'a', new=1)
             expect(flowp.testing2.dummy.test_var) == 1
             expect(flowp.testing2.dummy.test_obj.a) == 1
+
+        class WhenOnlyMode(Behavior):
+            class AndMethodInMode(Behavior):
+                def it_should_execute_the_test(self):
+                    self.behavior.__class__.it_is_test._only_mode = True
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(True)
+
+            class AndMethodNotInMode(Behavior):
+                def it_should_skip_the_test(self):
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(False)
+                    expect(self.results.add_skipped).to_have_been_called(1)
+
+            class AndBehaviorInMode(Behavior):
+                def it_should_execute_the_test(self):
+                    self.behavior._only_mode = True
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(True)
+
+            class AndBehaviorNotInMode(Behavior):
+                def it_should_skip_the_test(self):
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(False)
+                    expect(self.results.add_skipped).to_have_been_called(1)
+
+            class AndParentBehaviorInMode(Behavior):
+                def it_should_execute_the_test(self):
+                    self.pbehavior1.mock_add_spec([
+                        '_only_mode', 'before_each', 'after_each'])
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(True)
+
+        class WhenSkipped(Behavior):
+            class Method(Behavior):
+                def it_should_skip_the_test(self):
+                    self.behavior.__class__.it_is_test._skipped = True
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(False)
+                    expect(self.results.add_skipped).to_have_been_called(1)
+
+            class Behavio(Behavior):
+                def it_should_skip_the_test(self):
+                    self.behavior._skipped = True
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(False)
+                    expect(self.results.add_skipped).to_have_been_called(1)
+
+            class ParentBehavior(Behavior):
+                def it_should_skip_the_test(self):
+                    self.pbehavior1.mock_add_spec([
+                        '_skipped', 'before_each', 'after_each'])
+                    self.behavior.run(True)
+                    expect(self.behavior.executed).to_be(False)
+                    expect(self.results.add_skipped).to_have_been_called(1)
+
