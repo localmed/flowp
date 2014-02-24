@@ -57,10 +57,6 @@ Example of expectation::
 
     expect(subject) == expected_value
 
-::
-
-    expect(subject, 'message for failure') == expected_value
-
 
 Basic expectations
 ^^^^^^^^^^^^^^^^^^^
@@ -193,7 +189,7 @@ more simple and consistent for 90% of use cases. For the rest of 10% You can
 still use unittest.mock .
 
 
-.. automethod:: flowp.testing2.Behavior.mock
+.. automethod:: flowp.testing.Behavior.mock
 
 *Basic use cases*::
 
@@ -212,7 +208,7 @@ still use unittest.mock .
 .. code-block:: python
 
     import mymodule
-    from flowp.testing2 import Behavior, expect
+    from flowp.testing import Behavior, expect
 
 
     class MyObject(Behavior)
@@ -255,5 +251,5 @@ Example:
             touch('testfile')
             expect(exist('testfile')).to_be(True)
 
-.. autoclass:: flowp.testing.FileSystemBehavior
+.. autoclass:: flowp.testing.FilesBehavior
     :members: before_each, after_each, reset_cwd

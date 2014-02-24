@@ -6,6 +6,7 @@ import sys
 import inspect
 import traceback
 import time
+import tempfile
 from unittest import mock
 
 # for traceback passing in test results
@@ -139,6 +140,37 @@ class Behavior:
         if patcher:
             return patcher.start()
         return mock.Mock(spec=spec)
+
+
+class TemporaryDirectory(tempfile.TemporaryDirectory):
+    def enter(self):
+        self.org_cwd = os.getcwd()
+        os.chdir(self.name)
+
+    def exit(self):
+        os.chdir(self.org_cwd)
+
+
+class FilesBehavior(Behavior):
+    """Test case with basic setup for filesystem testing. It creates
+    temporary directory and changes current working directory to it.
+    After each test, returns to primary 'cwd' and remove temporary directory.
+    """
+    def before_each(self):
+        """Set current working directory to the tempfile.TemporaryDirectory"""
+        self.tempdir = TemporaryDirectory()
+        self.tempdir.enter()
+
+    def after_each(self):
+        """Set current working directory to the original one."""
+        self.tempdir.exit()
+        self.tempdir.cleanup()
+
+    def reset_cwd(self):
+        """ Reset current working directory to the root of created temporary
+        directory.
+        """
+        os.chdir(self.tempdir.name)
 
 
 class Results:

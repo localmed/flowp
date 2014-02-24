@@ -1,8 +1,18 @@
-from flowp.testing import Behavior, when, expect, FileSystemBehavior
 from flowp import system
 from unittest import mock
 import os
 
+class Behavior:
+    pass
+
+class expect:
+    pass
+
+def when(*args):
+    pass
+
+class FileSystemBehavior:
+    pass
 
 class FileUtilsInterface(FileSystemBehavior):
     def before_each(self):
@@ -35,13 +45,13 @@ class System(FileSystemBehavior):
         self.Subject.chown
 
 
-    @when('executes cp', 'path names given')
+    ##@when('executes cp', 'path names given')
     def it_delegates_call_to_shutil_copy(self):
         with mock.patch('shutil.copy') as copy:
             system.cp('path1', 'path2')
             expect(copy).called_with('path1', 'path2')
 
-    @when('executes cp', 'fileutilsinterface given')
+    ##@when('executes cp', 'fileutilsinterface given')
     def it_uses_cp_interface_method(self):
         path = mock.Mock(spec=['_cp'])
         system.cp(path, 'string_path')
@@ -49,13 +59,13 @@ class System(FileSystemBehavior):
         system.cp('string_path2', path)
         expect(path._cp).called_with('string_path2')
 
-    @when('executes mv', 'path names given')
+    ##@when('executes mv', 'path names given')
     def it_delegates_call_to_shutil_move(self):
         with mock.patch('shutil.move') as move:
             system.mv('path1', 'path2')
             expect(move).called_with('path1', 'path2')
 
-    @when('executes mv', 'fileutilsinterface given')
+    #@when('executes mv', 'fileutilsinterface given')
     def it_uses_mv_interface_method(self):
         path = mock.Mock(spec=['_mv'])
         system.mv(path, 'string_path')
@@ -63,13 +73,13 @@ class System(FileSystemBehavior):
         system.mv('string_path2', path)
         expect(path._mv).called_with('string_path2')
 
-    @when('executes rm', 'path names given')
+    #@when('executes rm', 'path names given')
     def it_delegates_call_to_osunlink(self):
         with mock.patch('os.unlink') as rm:
             system.rm('path1')
             expect(rm).called_with('path1')
 
-    @when('executes rm', 'fileutilsinterface given')
+    #@when('executes rm', 'fileutilsinterface given')
     def it_uses_rm_interface_method(self):
         path = mock.Mock(spec=['_rm'])
         system.rm(path)
@@ -259,7 +269,7 @@ class TaskScript(Behavior):
         yield
         p.stop()
 
-    @when(executes_create)
+    #@when(executes_create)
     def it_use_tasksfile_as_a_mixin_to_new_script_object(self):
         self.im_mock.side_effect = None
         class TestScript(system.TaskScript):
@@ -288,16 +298,16 @@ class TaskScript(Behavior):
         expect(script.t1b).ok
         expect(script.t2).ok
    
-    @when(executes_create, mocked_execute_tasks_method)
+    #@when(executes_create, mocked_execute_tasks_method)
     def it_create_script_object_from_script_arguments(self):
         script = system.TaskScript.create()
         expect(script.argv) == ['task1', 'task2']
 
-    @when(executes_create, mocked_execute_tasks_method)
+    #@when(executes_create, mocked_execute_tasks_method)
     def it_ignore_importing_taskfile_if_not_founded(self):
         system.TaskScript.create()
 
-    @when(executes_create, mocked_execute_tasks_method)
+    #@when(executes_create, mocked_execute_tasks_method)
     def it_execute_tasks(self):
         expect(self.exc_mock).not_called
         script = system.TaskScript.create()

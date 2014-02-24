@@ -1,6 +1,15 @@
 import unittest
 from flowp import ftypes
-from flowp.testing import Behavior, expect
+
+
+class Behavior:
+    pass
+
+class expect:
+    pass
+
+def when(*args):
+    pass
 
 
 class Ftypes(Behavior):
