@@ -33,6 +33,11 @@ def touch(filename):
         pass
 
 
+def mkdir(dirname):
+    """Create an empty directory"""
+    os.mkdir(dirname)
+
+
 def sh(command):
     """Executes shell command as is"""
     subprocess.check_call(command, shell=True)

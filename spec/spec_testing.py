@@ -323,19 +323,12 @@ class BehaviorInstance(Behavior):
 
 class TemporaryDirectory(Behavior):
     def before_each(self):
-        self.Subject = testing.TemporaryDirectory
         self.subject = testing.TemporaryDirectory()
-
-    def after_each(self):
-        self.subject.cleanup()
-
-    def it_should_inherit_form_tempfile(self):
-        expect(issubclass(self.Subject, tempfile.TemporaryDirectory)).to_be(True)
 
     def it_can_enter_and_exit_from_temporary_directory(self):
         org_dir = os.getcwd()
-        expect(os.path.samefile(org_dir, self.subject.name)).to_be(False)
         self.subject.enter()
+        expect(os.path.samefile(org_dir, self.subject.name)).to_be(False)
         expect(os.path.samefile(os.getcwd(), self.subject.name)).to_be(True)
         self.subject.exit()
         expect(os.path.samefile(os.getcwd(), org_dir)).to_be(True)

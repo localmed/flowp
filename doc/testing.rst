@@ -235,21 +235,26 @@ expect(m).to_have_been_called_with(...)  m.assert_any_cal(...)
 
 Files testing
 ---------------
+Behavior class provides under 'tmpdir' property temporary directory
+manager. It make easier to test features which requires files system.
+
+.. autoclass:: flowp.testing.TemporaryDirectory
+    :members:
+
 Example:
 
 .. code-block:: python
 
-    from flowp.testing import FilesBehavior, expect
+    from flowp.testing import Behavior, expect
     from flowp.files import touch, exist
 
-    class Touch(FilesBehavior):
+    class Touch(Behavior):
         def before_each(self):
-            super().before_each()
-            # do some preparations
+            self.tmpdir.enter()
+
+        def after_each(self):
+            self.tmpdir.exit()
 
         def it_create_file(self):
             touch('testfile')
             expect(exist('testfile')).to_be(True)
-
-.. autoclass:: flowp.testing.FilesBehavior
-    :members: before_each, after_each, reset_cwd

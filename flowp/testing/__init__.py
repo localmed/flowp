@@ -52,6 +52,34 @@ def skip(obj):
     return obj
 
 
+class TemporaryDirectory:
+    """tempfile.TemporaryDirectory proxy"""
+    def __init__(self):
+        self._tmpdir = None
+        self._org_cwd = None
+
+    def enter(self):
+        """Create temporary directory and set current working
+        directory to it, remembering the original one.
+        """
+        self._org_cwd = os.getcwd()
+        self._tmpdir = tempfile.TemporaryDirectory()
+        os.chdir(self._tmpdir.name)
+
+    def exit(self):
+        """Set current working directory to the original one and
+        cleanup temporary directory.
+        """
+        if not self._tmpdir:
+            return None
+        os.chdir(self._org_cwd)
+        self._tmpdir.cleanup()
+
+    @property
+    def name(self):
+        return self._tmpdir.name
+
+
 class Behavior:
     """Test case"""
     parent_behaviors = tuple()
@@ -59,6 +87,7 @@ class Behavior:
     def __init__(self, method_name, results):
         self.method_name = method_name
         self._results = results
+        self.tmpdir = TemporaryDirectory()
 
     def _have_only_mode(self):
         if hasattr(self, '_only_mode'):
@@ -140,37 +169,6 @@ class Behavior:
         if patcher:
             return patcher.start()
         return mock.Mock(spec=spec)
-
-
-class TemporaryDirectory(tempfile.TemporaryDirectory):
-    def enter(self):
-        self.org_cwd = os.getcwd()
-        os.chdir(self.name)
-
-    def exit(self):
-        os.chdir(self.org_cwd)
-
-
-class FilesBehavior(Behavior):
-    """Test case with basic setup for filesystem testing. It creates
-    temporary directory and changes current working directory to it.
-    After each test, returns to primary 'cwd' and remove temporary directory.
-    """
-    def before_each(self):
-        """Set current working directory to the tempfile.TemporaryDirectory"""
-        self.tempdir = TemporaryDirectory()
-        self.tempdir.enter()
-
-    def after_each(self):
-        """Set current working directory to the original one."""
-        self.tempdir.exit()
-        self.tempdir.cleanup()
-
-    def reset_cwd(self):
-        """ Reset current working directory to the root of created temporary
-        directory.
-        """
-        os.chdir(self.tempdir.name)
 
 
 class Results:
