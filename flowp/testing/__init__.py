@@ -111,6 +111,16 @@ class Behavior:
     def after_each(self):
         pass
 
+    def _call_before_each_methods(self):
+        for parent_behavior in self.parent_behaviors:
+            parent_behavior.before_each(self)
+        self.before_each()
+
+    def _call_after_each_methods(self):
+        self.after_each()
+        for parent_behavior in reversed(self.parent_behaviors):
+            parent_behavior.after_each(self)
+
     def run(self, only_mode=False):
         """Run specific test"""
         method = getattr(self, self.method_name)
@@ -124,22 +134,26 @@ class Behavior:
             return None
         try:
             self._results.add_executed()
-            # run before methods
-            for parent_behavior in self.parent_behaviors:
-                parent_behavior.before_each(self)
-            self.before_each()
-            # run test method
+            self._call_before_each_methods()
             method()
-            # run after methods
-            self.after_each()
-            for parent_behavior in reversed(self.parent_behaviors):
-                parent_behavior.after_each(self)
-            # stop patchers
-            mock.patch.stopall()
+
+        # Catching exceptions
         except:
-            self._results.add_failure(sys.exc_info(), self)
+            try:
+                self._call_after_each_methods()
+                mock.patch.stopall()
+            except:
+                self._results.add_failure(sys.exc_info(), self)
+            else:
+                self._results.add_failure(sys.exc_info(), self)
         else:
-            self._results.add_success()
+            try:
+                self._call_after_each_methods()
+                mock.patch.stopall()
+            except:
+                self._results.add_failure(sys.exc_info(), self)
+            else:
+                self._results.add_success()
 
     def mock(self, target=None, attr=None, new=mock.DEFAULT, spec=None):
         """Create a mock and register it at behavior mocks manager.

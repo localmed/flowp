@@ -242,12 +242,16 @@ class BehaviorInstance(Behavior):
                 def it_is_test(self):
                     self.executed = True
 
+                def it_raise_exception(self):
+                    raise AssertionError()
+
             self.expect = expect
             self.results = self.mock()
             self.pbehavior1 = self.mock(spec=['before_each', 'after_each'])
             self.pbehavior2 = self.mock(spec=['before_each', 'after_each'])
             self.behavior = TestBehavior('it_is_test', self.results)
             self.behavior.parent_behaviors = (self.pbehavior1, self.pbehavior2)
+            self.behavior.after_each = self.mock()
 
         def it_removes_mocks_patchers_after_each_test_method0(self):
             expect(flowp.testing.dummy.test_var) == 0
@@ -264,6 +268,13 @@ class BehaviorInstance(Behavior):
             self.mock(flowp.testing.dummy.test_obj, 'a', new=1)
             expect(flowp.testing.dummy.test_var) == 1
             expect(flowp.testing.dummy.test_obj.a) == 1
+
+        def it_should_always_call_after_each_methods(self):
+            self.behavior.method_name = 'it_raise_exception'
+            self.behavior.run()
+            expect(self.pbehavior1.after_each).to_have_been_called()
+            expect(self.pbehavior2.after_each).to_have_been_called()
+            expect(self.behavior.after_each).to_have_been_called()
 
         class WhenOnlyMode(Behavior):
             class AndMethodInMode(Behavior):
