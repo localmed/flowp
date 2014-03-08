@@ -1,9 +1,10 @@
 import os
 import subprocess
 import shutil
-import glob
+import glob as orgglob
 import os.path
-from collections import abc
+import threading
+import time
 
 
 # Aliases
@@ -20,6 +21,8 @@ isfile = os.path.isfile
 isdir = os.path.isdir
 
 islink = os.path.islink
+
+glob = orgglob.glob
 
 
 class cd:
@@ -53,9 +56,14 @@ def touch(filename):
         pass
 
 
-def mkdir(dirname):
-    """Create an empty directory"""
-    os.mkdir(dirname)
+def mkdir(dirname, p=False):
+    """Create an empty directory or directories recursivly
+    if p option given.
+    """
+    if p:
+        os.makedirs(dirname)
+    else:
+        os.mkdir(dirname)
 
 
 def sh(command):
@@ -72,7 +80,7 @@ def cp(src, dst):
         cp('dir1', 'dir2')
     """
     if '*' in src:
-        src = glob.glob(src)
+        src = glob(src)
 
     if isinstance(src, list):
         for f in src:
@@ -85,3 +93,49 @@ def cp(src, dst):
             shutil.copytree(src, dst)
         else:
             shutil.copy(src, dst)
+
+
+class Watch(threading.Thread):
+    def __init__(self, files, callback):
+        self._stopit = False
+
+        if '*' in files:
+            files = glob(files)
+
+        if isinstance(files, str):
+            files = [files]
+
+        if isinstance(files, list):
+            super().__init__(target=self.loop, args=(files, callback))
+            self.start()
+
+    def stop(self, timeout=None):
+        if timeout:
+            self.join(timeout)
+        self._stopit = True
+        self.join()
+
+    def stop_when(self, predicate, timeout=None):
+        if timeout:
+            start_time = time.time()
+        while not predicate():
+            if timeout and (time.time() - start_time) > timeout:
+                break
+        self.stop()
+
+    def loop(self, files, callback):
+        files_sizes = {}
+        while True:
+            if self._stopit:
+                break
+            for fn in files:
+                if self._stopit:
+                    break
+                if fn in files_sizes:
+                    try:
+                        if os.path.getsize(fn) != files_sizes[fn]:
+                            callback(fn)
+                    except FileNotFoundError:
+                        pass
+                else:
+                    files_sizes[fn] = os.path.getsize(fn)

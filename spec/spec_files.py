@@ -1,5 +1,5 @@
 from flowp.testing import Behavior, skip
-from flowp.files import cd, touch, mkdir, cp, sh, exists, isfile, isdir, pwd
+from flowp.files import cd, touch, mkdir, cp, sh, exists, isfile, isdir, pwd, Watch
 from flowp import testing
 import os
 
@@ -54,9 +54,12 @@ class Mkdir(Behavior):
         self.tmpdir.exit()
 
     def it_creates_empty_directory(self):
-        expect('testdir').not_exists()
         mkdir('testdir')
         expect('testdir').to_be_dir()
+
+    class WhenPOptionGiven(Behavior):
+        def it_creates_directories_recursivly(self):
+            mkdir('td1/td2', p=True)
 
 
 class FilesBehavior(Behavior):
@@ -92,6 +95,23 @@ class Cp(FilesBehavior):
         cp('testdir1', 'testdir3')
         expect('testdir3/file1.py').to_be_file()
         expect('testdir3/file2.py').to_be_file()
+
+
+class WatchClass(FilesBehavior):
+    def it_monitor_changes_on_files(self):
+        changed = False
+
+        def callback(filename):
+            nonlocal changed
+            changed = filename
+
+        wp = Watch('testdir1/*.py', callback)
+        expect(changed).to_be(False)
+        with open('testdir1/file2.py', 'w') as f:
+            f.write('test')
+        wp.stop_when(lambda: changed, 1)
+        expect(changed) == 'testdir1/file2.py'
+        expect(wp.is_alive()).to_be(False)
 
 
 class Sh(Behavior):

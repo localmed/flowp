@@ -352,7 +352,7 @@ class expect:
     def to_be(self, expectation):
         if isinstance(expectation, bool):
             assert bool(self._context) == expectation, \
-                "expected %s, given %s" % (True, self._context)
+                "expected %s, given %s" % (expectation, self._context)
         else:
             assert self._context is expectation, \
                 "%s is not %s" % (self._context, expectation)
@@ -360,7 +360,7 @@ class expect:
     def not_to_be(self, expectation):
         if isinstance(expectation, bool):
             assert not bool(self._context) == expectation, \
-                "expected not %s, given %s" % (True, self._context)
+                "expected not %s, given %s" % (expectation, self._context)
         else:
             assert self._context is not expectation, \
                 "%s is %s" % (self._context, expectation)
