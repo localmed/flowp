@@ -1,6 +1,18 @@
-from flowp.testing import Behavior, expect, skip
-from flowp.files import cd, touch, mkdir, cp, sh, exists
+from flowp.testing import Behavior, skip
+from flowp.files import cd, touch, mkdir, cp, sh, exists, isfile, isdir, pwd
+from flowp import testing
 import os
+
+
+class expect(testing.expect):
+    def to_be_file(self):
+        assert isfile(self._context)
+
+    def to_be_dir(self):
+        assert isdir(self._context)
+
+    def not_exists(self):
+        assert not exists(self._context)
 
 
 class Cd(Behavior):
@@ -13,12 +25,12 @@ class Cd(Behavior):
 
     def it_changes_working_directory(self):
         cd('testdir')
-        expect(os.getcwd().endswith('testdir')).to_be(True)
+        expect(pwd().endswith('testdir')).to_be(True)
 
     def it_changes_working_directory_in_context(self):
         with cd('testdir'):
-            expect(os.getcwd().endswith('testdir')).to_be(True)
-        expect(os.getcwd().endswith('testdir')).to_be(False)
+            expect(pwd().endswith('testdir')).to_be(True)
+        expect(pwd().endswith('testdir')).to_be(False)
 
 
 class Touch(Behavior):
@@ -29,9 +41,9 @@ class Touch(Behavior):
         self.tmpdir.exit()
 
     def it_creates_empty_file(self):
-        expect(os.path.isfile('testfile')).to_be(False)
+        expect('testfile').not_exists()
         touch('testfile')
-        expect(os.path.isfile('testfile')).to_be(True)
+        expect('testfile').to_be_file()
 
 
 class Mkdir(Behavior):
@@ -42,12 +54,12 @@ class Mkdir(Behavior):
         self.tmpdir.exit()
 
     def it_creates_empty_directory(self):
-        expect(os.path.isdir('testdir')).to_be(False)
+        expect('testdir').not_exists()
         mkdir('testdir')
-        expect(os.path.isdir('testdir')).to_be(True)
+        expect('testdir').to_be_dir()
 
 
-class Cp(Behavior):
+class FilesBehavior(Behavior):
     def before_each(self):
         self.tmpdir.enter()
         touch('file0.py')
@@ -59,37 +71,27 @@ class Cp(Behavior):
     def after_each(self):
         self.tmpdir.exit()
 
-    class WhenFilenameGiven(Behavior):
-        def it_copy_single_file(self):
-            cp('testdir1/file1.py', 'testdir2/file1b.py')
-            expect(exists('testdir1/file1.py')).to_be(True)
-            expect(exists('testdir2/file1b.py')).to_be(True)
 
-    class WhenGlobPatternGiven(Behavior):
-        def it_copy_group_of_files(self):
-            cp('testdir1/*.py', 'testdir2')
-            expect(exists('testdir2/file1.py')).to_be(True)
-            expect(exists('testdir2/file2.py')).to_be(True)
+class Cp(FilesBehavior):
+    def it_copy_single_file(self):
+        cp('testdir1/file1.py', 'testdir2/file1b.py')
+        expect('testdir1/file1.py').to_be_file()
+        expect('testdir2/file1b.py').to_be_file()
 
-    class WhenArrayOfFilenamesGiven(Behavior):
-        def it_copy_group_of_files(self):
-            cp(['testdir1/file1.py', 'testdir1/file2.py'], 'testdir2')
-            expect(exists('testdir2/file1.py')).to_be(True)
-            expect(exists('testdir2/file2.py')).to_be(True)
+    def it_copy_group_of_files_by_glob_pattern(self):
+        cp('testdir1/*.py', 'testdir2')
+        expect('testdir2/file1.py').to_be_file()
+        expect('testdir2/file2.py').to_be_file()
 
-    class WhenArrayOfFilenamesAndGlobPatternsGiven(Behavior):
-        def it_copy_group_of_files(self):
-            cp(['file0.py', 'testdir1/*.py'], 'testdir2')
-            expect(exists('testdir2/file0.py')).to_be(True)
-            expect(exists('testdir2/file1.py')).to_be(True)
-            expect(exists('testdir2/file2.py')).to_be(True)
+    def it_copy_group_of_files_by_file_names_list(self):
+        cp(['testdir1/file1.py', 'testdir1/file2.py'], 'testdir2')
+        expect('testdir2/file1.py').to_be_file()
+        expect('testdir2/file2.py').to_be_file()
 
-    class WhenDirectoryGiven(Behavior):
-        def it_copy_whole_directory(self):
-            cp('testdir1', 'testdir3')
-            expect(exists('testdir3/file1.py')).to_be(True)
-            expect(exists('testdir3/file2.py')).to_be(True)
-
+    def it_copy_whole_directory(self):
+        cp('testdir1', 'testdir3')
+        expect('testdir3/file1.py').to_be_file()
+        expect('testdir3/file2.py').to_be_file()
 
 
 class Sh(Behavior):

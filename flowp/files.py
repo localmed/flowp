@@ -3,6 +3,23 @@ import subprocess
 import shutil
 import glob
 import os.path
+from collections import abc
+
+
+# Aliases
+exists = os.path.exists
+
+ls = os.listdir
+
+pwd = os.getcwd
+
+chdir = os.chdir
+
+isfile = os.path.isfile
+
+isdir = os.path.isdir
+
+islink = os.path.islink
 
 
 class cd:
@@ -46,22 +63,23 @@ def sh(command):
     subprocess.check_call(command, shell=True)
 
 
-exists = os.path.exists
-
-
 def cp(src, dst):
     """Copy files and directories::
 
         cp('dir/file.py', 'dir2/file.py')
         cp('dir/*.py', 'dir2')
-        cp(['file1.py', 'dir/*.py'], 'dir')
+        cp(['file1.py', 'file2.py'], 'dir')
+        cp('dir1', 'dir2')
     """
     if '*' in src:
         src = glob.glob(src)
 
     if isinstance(src, list):
         for f in src:
-            cp(f, dst)
+            if os.path.isdir(f):
+                shutil.copytree(f, dst)
+            else:
+                shutil.copy(f, dst)
     else:
         if os.path.isdir(src):
             shutil.copytree(src, dst)
