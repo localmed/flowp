@@ -96,9 +96,16 @@ def cp(src, dst):
 
 
 class Watch(threading.Thread):
+    NEW = 1
+    CHANGE = 2
+    DELETE = 3
+
     def __init__(self, files, callback):
         self._stopit = False
+        super().__init__(target=self.loop, args=(self._list(files), callback))
+        self.start()
 
+    def _list(self, files):
         if '*' in files:
             files = glob(files)
 
@@ -106,8 +113,8 @@ class Watch(threading.Thread):
             files = [files]
 
         if isinstance(files, list):
-            super().__init__(target=self.loop, args=(files, callback))
-            self.start()
+            return files
+        return []
 
     def stop(self, timeout=None):
         if timeout:
@@ -132,10 +139,7 @@ class Watch(threading.Thread):
                 if self._stopit:
                     break
                 if fn in files_sizes:
-                    try:
-                        if os.path.getsize(fn) != files_sizes[fn]:
-                            callback(fn)
-                    except FileNotFoundError:
-                        pass
+                    if os.path.getsize(fn) != files_sizes[fn]:
+                        callback(fn, self.CHANGE)
                 else:
                     files_sizes[fn] = os.path.getsize(fn)

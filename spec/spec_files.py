@@ -98,19 +98,35 @@ class Cp(FilesBehavior):
 
 
 class WatchClass(FilesBehavior):
-    def it_monitor_changes_on_files(self):
-        changed = False
+    def before_each(self):
+        super().before_each()
+        self.filename = False
+        self.event = None
 
-        def callback(filename):
-            nonlocal changed
-            changed = filename
+        def callback(filename, event):
+            self.filename = filename
+            self.event = event
 
-        wp = Watch('testdir1/*.py', callback)
-        expect(changed).to_be(False)
+        self.callback = callback
+
+    def it_monitor_files_changes(self):
+        wp = Watch('testdir1/*.py', self.callback)
+        expect(self.filename).to_be(False)
         with open('testdir1/file2.py', 'w') as f:
             f.write('test')
-        wp.stop_when(lambda: changed, 1)
-        expect(changed) == 'testdir1/file2.py'
+        wp.stop_when(lambda: self.filename, 1)
+        expect(self.filename) == 'testdir1/file2.py'
+        expect(self.event) == Watch.CHANGE
+        expect(wp.is_alive()).to_be(False)
+
+    @skip
+    def it_monitor_new_files(self):
+        wp = Watch('testdir1/*.py', self.callback)
+        expect(self.filename).to_be(False)
+        touch('testdir1/file3.py')
+        wp.stop_when(lambda: self.event, 1)
+        expect(self.filename) == 'testdir1/file2.py'
+        expect(self.event) == Watch.NEW
         expect(wp.is_alive()).to_be(False)
 
 
