@@ -246,7 +246,7 @@ Example:
 .. code-block:: python
 
     from flowp.testing import Behavior, expect
-    from flowp.files import touch, exist
+    from flowp.files import touch, exists
 
     class Touch(Behavior):
         def before_each(self):
@@ -257,4 +257,4 @@ Example:
 
         def it_create_file(self):
             touch('testfile')
-            expect(exist('testfile')).to_be(True)
+            expect(exists('testfile')).to_be(True)

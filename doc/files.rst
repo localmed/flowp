@@ -1,6 +1,4 @@
 flowp.files
 ============
-.. automodule:: flowp.system
-    :members: cd, sh, cp, mv, rm, pwd, mkdir, rmdir, touch, chmod, chown, ln, watch
-    :undoc-members:
-
+.. automodule:: flowp.files
+    :members: cd, cp, chdir, exists, isdir, isfile, islink, glob, ls, mkdir, pwd, rm, sh, touch, Watch

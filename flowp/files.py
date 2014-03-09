@@ -10,11 +10,20 @@ import time
 # Aliases
 exists = os.path.exists
 
-ls = os.listdir
 
-pwd = os.getcwd
+def ls(path='.'):
+    """Return a list of file names from given path."""
+    return os.listdir(path)
 
-chdir = os.chdir
+
+def pwd():
+    """Return current working directory"""
+    return os.getcwd()
+
+
+def chdir(path):
+    """Change the current working directory to the specified path."""
+    os.chdir(path)
 
 isfile = os.path.isfile
 
@@ -24,7 +33,10 @@ islink = os.path.islink
 
 glob = orgglob.glob
 
-rm = os.remove
+
+def rm(path):
+    """Remove a file"""
+    os.remove(path)
 
 
 class cd:
@@ -52,20 +64,23 @@ class cd:
         os.chdir(self.org_dir)
 
 
-def touch(filename):
+def touch(path):
     """Create an empty file"""
-    with open(filename, 'w'):
+    with open(path, 'w'):
         pass
 
 
-def mkdir(dirname, p=False):
-    """Create an empty directory or directories recursivly
-    if p option given.
+def mkdir(path, p=False):
+    """Create an empty directory
+
+    :param p:
+        if true given it creates recursively directories
+        from path
     """
     if p:
-        os.makedirs(dirname)
+        os.makedirs(path)
     else:
-        os.mkdir(dirname)
+        os.mkdir(path)
 
 
 def sh(command):
@@ -74,12 +89,14 @@ def sh(command):
 
 
 def cp(src, dst):
-    """Copy files and directories::
+    """
+    Copy files and directories::
 
         cp('dir/file.py', 'dir2/file.py')
         cp('dir/*.py', 'dir2')
         cp(['file1.py', 'file2.py'], 'dir')
         cp('dir1', 'dir2')
+
     """
     if '*' in src:
         src = glob(src)
@@ -98,42 +115,53 @@ def cp(src, dst):
 
 
 class Watch(threading.Thread):
-    """
-    def callback(filename, action):
-        if action == Watch.CHANGE:
-            ...
+    """Create and start watch thread that watch
+    files and call given callable if some of the
+    watch actions occurs.
 
-    w = Watch('*.py', callback)
-    w.wait()
+    :param pathname:
+        files to watch
+
+    :param callback:
+        callable(filename, action)
+
+    ::
+
+        def callback(filename, action):
+            if action == Watch.CHANGE:
+                ...
+
+        w = Watch('*.py', callback)
+        w.wait()
+
     """
+    #: New file action
     NEW = 1
+    #: File changed action
     CHANGE = 2
+    #: File removed action
     DELETE = 3
 
-    def __init__(self, files, callback):
+    def __init__(self, pathname, callback):
         self._stopit = False
         self._files_registered = False
-        super().__init__(target=self.loop, args=(files, callback))
+        super().__init__(target=self.loop, args=(pathname, callback))
         self.start()
 
-    def _list(self, files):
-        if '*' in files:
-            files = glob(files)
-
-        if isinstance(files, str):
-            files = [files]
-
-        if isinstance(files, list):
-            return files
-        return []
-
     def stop(self, timeout=None):
+        """Stop watch process. If timeout given stop
+        process after given time.
+        """
         if timeout:
             self.join(timeout)
         self._stopit = True
         self.join()
 
     def stop_when(self, predicate, timeout=None):
+        """Stop watch process when callable predicate()
+        evaluates to True. If timeout given stop
+        process after given time.
+        """
         if timeout:
             start_time = time.time()
         while not predicate():
@@ -146,6 +174,9 @@ class Watch(threading.Thread):
             pass
 
     def wait(self):
+        """Hold process in the waiting state,
+        keep watcher running
+        """
         try:
             self.join()
         except KeyboardInterrupt:
@@ -154,7 +185,7 @@ class Watch(threading.Thread):
     def loop(self, files_pattern, callback):
         files_sizes = {}
 
-        for fn in self._list(files_pattern):
+        for fn in glob(files_pattern):
             files_sizes[fn] = os.path.getsize(fn)
 
         self._files_registered = True
@@ -163,7 +194,7 @@ class Watch(threading.Thread):
             if self._stopit:
                 break
 
-            files = self._list(files_pattern)
+            files = glob(files_pattern)
 
             for fn in files:
                 if self._stopit:

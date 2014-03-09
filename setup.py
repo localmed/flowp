@@ -72,7 +72,7 @@ from distutils.core import setup
 
 setup(
     name='flowp',
-    version='2.0-dev',
+    version='1.1',
     description='More fun with Python development',
     long_description=__doc__,
     url='http://flowp.readthedocs.org/en/latest/',

@@ -581,9 +581,10 @@ a:hover tt {
     display: none;
 }
 
-#flowp\.system\.cd .property {
+#flowp\.files\.cd .property {
     display: none;
 }
-#module-flowp\.system .descclassname {
+
+#module-flowp\.files .descclassname {
     display: none;
 }
