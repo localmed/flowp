@@ -24,6 +24,8 @@ islink = os.path.islink
 
 glob = orgglob.glob
 
+rm = os.remove
+
 
 class cd:
     """Change working directory. Behave exacly like os.chdir, except
@@ -102,7 +104,8 @@ class Watch(threading.Thread):
 
     def __init__(self, files, callback):
         self._stopit = False
-        super().__init__(target=self.loop, args=(self._list(files), callback))
+        self._files_registered = False
+        super().__init__(target=self.loop, args=(files, callback))
         self.start()
 
     def _list(self, files):
@@ -130,16 +133,33 @@ class Watch(threading.Thread):
                 break
         self.stop()
 
-    def loop(self, files, callback):
+    def wait_for_files_registered(self):
+        while not self._files_registered:
+            pass
+
+    def loop(self, files_pattern, callback):
         files_sizes = {}
+
+        for fn in self._list(files_pattern):
+            files_sizes[fn] = os.path.getsize(fn)
+
+        self._files_registered = True
+
         while True:
             if self._stopit:
                 break
+
+            files = self._list(files_pattern)
+
             for fn in files:
                 if self._stopit:
                     break
                 if fn in files_sizes:
-                    if os.path.getsize(fn) != files_sizes[fn]:
-                        callback(fn, self.CHANGE)
+                    try:
+                        if os.path.getsize(fn) != files_sizes[fn]:
+                            callback(fn, self.CHANGE)
+                    except FileNotFoundError:
+                        callback(fn, self.DELETE)
                 else:
                     files_sizes[fn] = os.path.getsize(fn)
+                    callback(fn, self.NEW)
