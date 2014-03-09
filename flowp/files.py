@@ -98,6 +98,14 @@ def cp(src, dst):
 
 
 class Watch(threading.Thread):
+    """
+    def callback(filename, action):
+        if action == Watch.CHANGE:
+            ...
+
+    w = Watch('*.py', callback)
+    w.wait()
+    """
     NEW = 1
     CHANGE = 2
     DELETE = 3
@@ -137,6 +145,12 @@ class Watch(threading.Thread):
         while not self._files_registered:
             pass
 
+    def wait(self):
+        try:
+            self.join()
+        except KeyboardInterrupt:
+            self.stop()
+
     def loop(self, files_pattern, callback):
         files_sizes = {}
 
@@ -158,8 +172,10 @@ class Watch(threading.Thread):
                     try:
                         if os.path.getsize(fn) != files_sizes[fn]:
                             callback(fn, self.CHANGE)
+                            files_sizes[fn] = os.path.getsize(fn)
                     except FileNotFoundError:
                         callback(fn, self.DELETE)
+                        del files_sizes[fn]
                 else:
                     files_sizes[fn] = os.path.getsize(fn)
                     callback(fn, self.NEW)
