@@ -46,7 +46,7 @@ Behavior specification (spec_mymodule.py):
 
     $ python3 -m flowp.testing --watch
 
-Giving --watch flag script will be watching on specification files, if
+Giving --watch flag script will be watching on python files, if
 some changes happen, tests will be reran.
 
 Expectations

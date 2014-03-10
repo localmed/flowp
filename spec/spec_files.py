@@ -91,10 +91,16 @@ class Cp(FilesBehavior):
         expect('testdir2/file1.py').to_be_file()
         expect('testdir2/file2.py').to_be_file()
 
-    def it_copy_whole_directory(self):
-        cp('testdir1', 'testdir3')
-        expect('testdir3/file1.py').to_be_file()
-        expect('testdir3/file2.py').to_be_file()
+    def it_raise_error_if_trying_to_copy_directory(self):
+        with expect.to_raise(IsADirectoryError):
+            cp('testdir1', 'testdir3')
+
+    class WhenROptionGiven(Behavior):
+        def it_copy_whole_directories(self):
+            cp('testdir1', 'testdir3', r=True)
+            expect('testdir3/file1.py').to_be_file()
+            expect('testdir3/file2.py').to_be_file()
+
 
 
 class WatchClass(FilesBehavior):
@@ -138,6 +144,18 @@ class WatchClass(FilesBehavior):
         wp.stop_when(lambda: self.event, 1)
         expect(self.filename) == 'testdir1/file2.py'
         expect(self.event) == Watch.DELETE
+        expect(wp.is_alive()).to_be(False)
+
+    def it_accept_list_of_files(self):
+        wp = Watch(['testdir1/file1.py',
+                    'testdir1/file2.py'], self.callback)
+        expect(self.filename).to_be(False)
+        wp.wait_for_files_registered()
+        with open('testdir1/file2.py', 'w') as f:
+            f.write('test')
+        wp.stop_when(lambda: self.filename, 2)
+        expect(self.filename) == 'testdir1/file2.py'
+        expect(self.event) == Watch.CHANGE
         expect(wp.is_alive()).to_be(False)
 
 

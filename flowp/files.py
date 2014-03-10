@@ -31,11 +31,16 @@ isdir = os.path.isdir
 
 islink = os.path.islink
 
-glob = orgglob.glob
+
+def glob(pathname):
+    """Return a list of paths matching a pathname pattern."""
+    return orgglob.glob(pathname)
 
 
-def rm(path):
-    """Remove a file"""
+def rm(path, r=False):
+    """Remove a file or whole directory if
+    r=True argument given.
+    """
     os.remove(path)
 
 
@@ -88,39 +93,37 @@ def sh(command):
     subprocess.check_call(command, shell=True)
 
 
-def cp(src, dst):
+def cp(src, dst, r=False):
     """
-    Copy files and directories::
+    Copy files or directories if r=True argument given
+    ::
 
         cp('dir/file.py', 'dir2/file.py')
         cp('dir/*.py', 'dir2')
         cp(['file1.py', 'file2.py'], 'dir')
-        cp('dir1', 'dir2')
+        cp('dir1', 'dir2', r=True)
 
     """
-    if '*' in src:
+    if isinstance(src, str):
         src = glob(src)
 
-    if isinstance(src, list):
-        for f in src:
-            if os.path.isdir(f):
-                shutil.copytree(f, dst)
-            else:
-                shutil.copy(f, dst)
-    else:
-        if os.path.isdir(src):
-            shutil.copytree(src, dst)
+    for f in src:
+        if os.path.isdir(f):
+            if not r:
+                raise IsADirectoryError("Is directory %s" % f)
+            shutil.copytree(f, dst)
         else:
-            shutil.copy(src, dst)
+            shutil.copy(f, dst)
 
 
 class Watch(threading.Thread):
-    """Create and start watch thread that watch
+    """Create and start watch thread that will watch
     files and call given callable if some of the
     watch actions occurs.
 
-    :param pathname:
-        files to watch
+    :param files:
+        files to watch given as glob path or list
+        of files
 
     :param callback:
         callable(filename, action)
@@ -142,10 +145,10 @@ class Watch(threading.Thread):
     #: File removed action
     DELETE = 3
 
-    def __init__(self, pathname, callback):
+    def __init__(self, files, callback):
         self._stopit = False
         self._files_registered = False
-        super().__init__(target=self.loop, args=(pathname, callback))
+        super().__init__(target=self.loop, args=(files, callback))
         self.start()
 
     def stop(self, timeout=None):
@@ -185,7 +188,12 @@ class Watch(threading.Thread):
     def loop(self, files_pattern, callback):
         files_sizes = {}
 
-        for fn in glob(files_pattern):
+        if isinstance(files_pattern, str):
+            files = glob(files_pattern)
+        else:
+            files = files_pattern
+
+        for fn in files:
             files_sizes[fn] = os.path.getsize(fn)
 
         self._files_registered = True
@@ -194,7 +202,8 @@ class Watch(threading.Thread):
             if self._stopit:
                 break
 
-            files = glob(files_pattern)
+            if isinstance(files_pattern, str):
+                files = glob(files_pattern)
 
             for fn in files:
                 if self._stopit:

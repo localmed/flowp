@@ -169,7 +169,7 @@ class Behavior:
         :param spec:
             list of attributes which mock should have
         :rtype:
-            unittest.mock.Mock if new==None
+            unittest.mock.Mock if new will have default value
         """
         patcher = None
         if target and attr:
