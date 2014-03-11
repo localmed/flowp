@@ -247,6 +247,8 @@ class BehaviorInstance(Behavior):
 
             self.expect = expect
             self.results = self.mock()
+            self.results.executed = 1
+            self.results.all = 2
             self.pbehavior1 = self.mock(spec=['before_each', 'after_each'])
             self.pbehavior2 = self.mock(spec=['before_each', 'after_each'])
             self.behavior = TestBehavior('it_is_test', self.results)

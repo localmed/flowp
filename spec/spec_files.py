@@ -102,7 +102,6 @@ class Cp(FilesBehavior):
             expect('testdir3/file2.py').to_be_file()
 
 
-
 class WatchClass(FilesBehavior):
     def before_each(self):
         super().before_each()

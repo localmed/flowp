@@ -41,6 +41,9 @@ class ColorStream(str):
         self.green(msg)
         self.writeln()
 
+    def flush(self):
+        self._stream.flush()
+
 
 def only(obj):
     obj._only_mode = True
@@ -154,6 +157,9 @@ class Behavior:
                 self._results.add_failure(sys.exc_info(), self)
             else:
                 self._results.add_success()
+        finally:
+            if self._results.executed < self._results.all:
+                self._results.print_execution_info(in_place=True)
 
     def mock(self, target=None, attr=None, new=mock.DEFAULT, spec=None):
         """Create a mock and register it at behavior mocks manager.
@@ -191,11 +197,11 @@ class Results:
         self.stream = ColorStream(sys.stdout)
         self.failures = []
         self.skipped = 0
-        self.started = 0
         self.executed = 0
+        self.all = 0
 
     def start_test(self):
-        self.started += 1
+        pass
 
     def stop_test(self):
         pass
@@ -223,7 +229,24 @@ class Results:
         description = re.sub('([a-z0-9])([A-Z])', r'\1 \2', description).lower().capitalize()
         return description
 
+    def print_execution_info(self, in_place=False):
+        failures = len(self.failures)
+        if in_place:
+            self.stream.write('\r')
+        self.stream.write('Executed %s of %s ' % (self.executed, self.all))
+        if self.skipped:
+            self.stream.write('(%s skipped) ' % self.skipped)
+        if failures:
+            self.stream.red('(%s FAILED) ' % failures)
+        else:
+            self.stream.green('SUCCESS ')
+
     def print(self, time_taken):
+        # clean line
+        self.stream.write('\r')
+        if self.failures:
+            self.stream.write(' ' * 80)
+
         # failures
         for err, behavior in self.failures:
             method_name = behavior.method_name[3:].replace('_', ' ')
@@ -232,14 +255,7 @@ class Results:
             self.stream.write("%s\n" % err)
 
         # sum up
-        failures = len(self.failures)
-        self.stream.write('Executed %s of %s ' % (self.executed, self.started))
-        if self.skipped:
-            self.stream.write('(%s skipped) ' % self.skipped)
-        if failures:
-            self.stream.red('(%s FAILED) ' % failures)
-        else:
-            self.stream.green('SUCCESS ')
+        self.print_execution_info()
         self.stream.writeln('(%.3f sec)' % time_taken)
 
     def _exc_info_to_string(self, err):
@@ -323,9 +339,13 @@ class Runner:
         for module in self.get_spec_modules():
             for BClass in self.get_behavior_classes(module):
                 self.load_tests(BClass, results)
+        results.all = len(self.loaded_tests)
+
         # Run tests
         for behavior in self.loaded_tests:
             behavior.run(self.only_mode)
+
+        # Print results
         stop_time = time.time()
         time_taken = stop_time - start_time
         results.print(time_taken)

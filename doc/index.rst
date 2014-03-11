@@ -24,19 +24,18 @@ User's guide
 
     testing
     files
-    task
 
 Changes log
 ---------------------
 
 1.1
 ^^^^^^^
-* new modules: flowp.files and flowp.task
+* new module: flowp.files
 * flowp.testing: new mechanism independent from unittest module,
   uses only unittest.mock for mocking capabilities
 * flowp.testing: support for files testing
 
 1.0 (2013-12-15)
-^^^^^^^
+^^^^^^^^^^^^^^^^^
 * initial release
 * flowp.testing module only
