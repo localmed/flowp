@@ -132,9 +132,9 @@ class Mv(FilesBehavior):
 
 class WatchClass(FilesBehavior):
     def before_each(self):
-        super().before_each()
+        FilesBehavior.before_each(self)
         self.filename = False
-        self.event = None
+        self.event = False
 
         def callback(filename, event):
             self.filename = filename
@@ -142,48 +142,58 @@ class WatchClass(FilesBehavior):
 
         self.callback = callback
 
-    def it_monitor_files_changes(self):
-        wp = Watch('testdir1/*.py', self.callback, sleep=0)
-        expect(self.filename).to_be(False)
-        wp.wait_for_files_registered()
-        with open('testdir1/file2.py', 'w') as f:
-            f.write('test')
-        wp.stop_when(lambda: self.filename, 2)
-        expect(self.filename) == 'testdir1/file2.py'
-        expect(self.event) == Watch.CHANGE
-        expect(wp.is_alive()).to_be(False)
+    class WhenGlobPatternGiven(Behavior):
+        def before_each(self):
+            self.wp = Watch('testdir1/*.py', self.callback, sleep=0)
+            expect(self.filename).to_be(False)
+            expect(self.event).to_be(False)
+            self.wp.wait_for_files_registered()
 
-    def it_monitor_new_files(self):
-        wp = Watch('testdir1/*.py', self.callback, sleep=0)
-        expect(self.filename).to_be(False)
-        wp.wait_for_files_registered()
-        touch('testdir1/file3.py')
-        wp.stop_when(lambda: self.event, 1)
-        expect(self.filename) == 'testdir1/file3.py'
-        expect(self.event) == Watch.NEW
-        expect(wp.is_alive()).to_be(False)
+        def after_each(self):
+            expect(self.wp.is_alive()).to_be(False)
 
-    def it_monitor_deleted_files(self):
-        wp = Watch('testdir1/*.py', self.callback, sleep=0)
-        expect(self.filename).to_be(False)
-        wp.wait_for_files_registered()
-        rm('testdir1/file2.py')
-        wp.stop_when(lambda: self.event, 1)
-        expect(self.filename) == 'testdir1/file2.py'
-        expect(self.event) == Watch.DELETE
-        expect(wp.is_alive()).to_be(False)
+        def it_monitor_files_changes(self):
+            with open('testdir1/file2.py', 'w') as f:
+                f.write('test')
+            self.wp.stop_when(lambda: self.filename, 1)
+            expect(self.filename) == 'testdir1/file2.py'
+            expect(self.event) == Watch.CHANGE
 
-    def it_accept_list_of_files(self):
-        wp = Watch(['testdir1/file1.py',
-                    'testdir1/file2.py'], self.callback, sleep=0)
-        expect(self.filename).to_be(False)
-        wp.wait_for_files_registered()
-        with open('testdir1/file2.py', 'w') as f:
-            f.write('test')
-        wp.stop_when(lambda: self.filename, 2)
-        expect(self.filename) == 'testdir1/file2.py'
-        expect(self.event) == Watch.CHANGE
-        expect(wp.is_alive()).to_be(False)
+        def it_monitor_new_files(self):
+            touch('testdir1/file3.py')
+            self.wp.stop_when(lambda: self.event, 1)
+            expect(self.filename) == 'testdir1/file3.py'
+            expect(self.event) == Watch.NEW
+
+        def it_monitor_deleted_files(self):
+            rm('testdir1/file2.py')
+            self.wp.stop_when(lambda: self.event, 1)
+            expect(self.filename) == 'testdir1/file2.py'
+            expect(self.event) == Watch.DELETE
+
+    class WhenListOfFilesGiven(Behavior):
+        def before_each(self):
+            self.wp = Watch(['testdir1/file1.py',
+                             'testdir1/file2.py'], self.callback, sleep=0)
+            expect(self.filename).to_be(False)
+            expect(self.event).to_be(False)
+            self.wp.wait_for_files_registered()
+
+        def after_each(self):
+            expect(self.wp.is_alive()).to_be(False)
+
+        def it_monitor_files_changes(self):
+            with open('testdir1/file2.py', 'w') as f:
+                f.write('test')
+            self.wp.stop_when(lambda: self.filename, 1)
+            expect(self.filename) == 'testdir1/file2.py'
+            expect(self.event) == Watch.CHANGE
+
+        def it_monitor_deleted_files(self):
+            rm('testdir1/file2.py')
+            self.wp.stop_when(lambda: self.event, 1)
+            expect(self.filename) == 'testdir1/file2.py'
+            expect(self.event) == Watch.DELETE
 
 
 class Sh(Behavior):

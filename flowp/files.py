@@ -211,11 +211,11 @@ class Watch(threading.Thread):
         files_sizes = {}
 
         if isinstance(files_pattern, str):
-            files = glob(files_pattern)
+            files_list = glob(files_pattern)
         else:
-            files = files_pattern
+            files_list = files_pattern
 
-        for fn in files:
+        for fn in files_list:
             files_sizes[fn] = os.path.getsize(fn)
 
         self._files_registered = True
@@ -225,7 +225,7 @@ class Watch(threading.Thread):
             if self._stopit:
                 break
 
-            for fn in files:
+            for fn in files_list:
                 if self._stopit:
                     break
                 if fn in files_sizes:
@@ -236,9 +236,10 @@ class Watch(threading.Thread):
                     except FileNotFoundError:
                         callback(fn, self.DELETE)
                         del files_sizes[fn]
+                        files_list.remove(fn)
                 else:
                     files_sizes[fn] = os.path.getsize(fn)
                     callback(fn, self.NEW)
 
             if isinstance(files_pattern, str):
-                files = glob(files_pattern)
+                files_list = glob(files_pattern)
