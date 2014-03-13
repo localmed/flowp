@@ -208,38 +208,52 @@ class Watch(threading.Thread):
             self.stop()
 
     def loop(self, files_pattern, callback):
+        # Registering files
         files_sizes = {}
 
         if isinstance(files_pattern, str):
-            files_list = glob(files_pattern)
+            fresh_files = glob(files_pattern)
         else:
-            files_list = files_pattern
+            fresh_files = files_pattern
 
-        for fn in files_list:
-            files_sizes[fn] = os.path.getsize(fn)
+        for path in fresh_files:
+            files_sizes[path] = os.path.getsize(path)
 
         self._files_registered = True
 
+        # Watch loop
         while True:
-            time.sleep(self._sleep)
             if self._stopit:
                 break
 
-            for fn in files_list:
+            time.sleep(self._sleep)
+
+            # Checking existing files
+            for path in tuple(files_sizes.keys()):
                 if self._stopit:
                     break
-                if fn in files_sizes:
-                    try:
-                        if os.path.getsize(fn) != files_sizes[fn]:
-                            callback(fn, self.CHANGE)
-                            files_sizes[fn] = os.path.getsize(fn)
-                    except FileNotFoundError:
-                        callback(fn, self.DELETE)
-                        del files_sizes[fn]
-                        files_list.remove(fn)
-                else:
-                    files_sizes[fn] = os.path.getsize(fn)
-                    callback(fn, self.NEW)
 
+                try:
+                    fsize = os.path.getsize(path)
+                    if fsize != files_sizes[path]:
+                        callback(path, self.CHANGE)
+                        files_sizes[path] = fsize
+
+                except FileNotFoundError:
+                    callback(path, self.DELETE)
+                    del files_sizes[path]
+                    if path in fresh_files:
+                        fresh_files.remove(path)
+
+            # Checking new files
+            for path in fresh_files:
+                if self._stopit:
+                    break
+
+                if path not in files_sizes:
+                    files_sizes[path] = os.path.getsize(path)
+                    callback(path, self.NEW)
+
+            # Updating files list if glob pattern given
             if isinstance(files_pattern, str):
-                files_list = glob(files_pattern)
+                fresh_files = glob(files_pattern)

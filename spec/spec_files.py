@@ -155,7 +155,7 @@ class WatchClass(FilesBehavior):
         def it_monitor_files_changes(self):
             with open('testdir1/file2.py', 'w') as f:
                 f.write('test')
-            self.wp.stop_when(lambda: self.filename, 1)
+            self.wp.stop_when(lambda: self.event, 1)
             expect(self.filename) == 'testdir1/file2.py'
             expect(self.event) == Watch.CHANGE
 
@@ -185,7 +185,7 @@ class WatchClass(FilesBehavior):
         def it_monitor_files_changes(self):
             with open('testdir1/file2.py', 'w') as f:
                 f.write('test')
-            self.wp.stop_when(lambda: self.filename, 1)
+            self.wp.stop_when(lambda: self.event, 1)
             expect(self.filename) == 'testdir1/file2.py'
             expect(self.event) == Watch.CHANGE
 
