@@ -10,7 +10,7 @@ import tempfile
 from unittest import mock
 
 # for traceback passing in test results
-TESTING_MODULE = True
+TESTING_FRAME = True
 
 
 class ColorStream(str):
@@ -278,7 +278,15 @@ class Results:
         return length
 
     def _is_relevant_tb_level(self, tb):
-        return 'TESTING_MODULE' in tb.tb_frame.f_globals
+        if 'TESTING_FRAME' in tb.tb_frame.f_globals:
+            return True
+
+        if 'self' in tb.tb_frame.f_locals:
+            obj = tb.tb_frame.f_locals['self']
+            if hasattr(obj, 'TESTING_FRAME'):
+                return True
+
+        return False
 
 
 class Runner:
@@ -352,6 +360,9 @@ class Runner:
 
 
 class expect:
+    # for passing traceback purpose
+    TESTING_FRAME = True
+
     class to_raise:
         def __init__(self, expected_exc):
             self.expected_exc = expected_exc

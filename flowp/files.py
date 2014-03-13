@@ -116,6 +116,24 @@ def cp(src, dst, r=False):
             shutil.copy(f, dst)
 
 
+def mv(src, dst):
+    """
+    Move files or directories
+    ::
+
+        mv('dir/file.py', 'dir2/file.py')
+        mv('dir/*.py', 'dir2')
+        mv(['file1.py', 'file2.py'], 'dir')
+        mv('dir1', 'dir2')
+
+    """
+    if isinstance(src, str):
+        src = glob(src)
+
+    for f in src:
+        shutil.move(f, dst)
+
+
 class Watch(threading.Thread):
     """Create and start watch thread that will watch
     files and call given callable if some of the

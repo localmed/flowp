@@ -1,5 +1,5 @@
 from flowp.testing import Behavior, skip
-from flowp.files import cd, touch, mkdir, cp, sh, exists, isfile, isdir, pwd, Watch, rm
+from flowp.files import cd, touch, mkdir, cp, sh, exists, isfile, isdir, pwd, Watch, rm, mv
 from flowp import testing
 import os
 
@@ -100,6 +100,33 @@ class Cp(FilesBehavior):
             cp('testdir1', 'testdir3', r=True)
             expect('testdir3/file1.py').to_be_file()
             expect('testdir3/file2.py').to_be_file()
+
+
+class Mv(FilesBehavior):
+    def it_move_single_file(self):
+        mv('testdir1/file1.py', 'testdir2/file1b.py')
+        expect('testdir1/file1.py').not_exists()
+        expect('testdir2/file1b.py').to_be_file()
+
+    def it_move_group_of_files_by_glob_pattern(self):
+        mv('testdir1/*.py', 'testdir2')
+        expect('testdir2/file1.py').to_be_file()
+        expect('testdir2/file2.py').to_be_file()
+        expect('testdir1/file1.py').not_exists()
+        expect('testdir1/file2.py').not_exists()
+
+    def it_copy_group_of_files_by_file_names_list(self):
+        mv(['testdir1/file1.py', 'testdir1/file2.py'], 'testdir2')
+        expect('testdir2/file1.py').to_be_file()
+        expect('testdir2/file2.py').to_be_file()
+        expect('testdir1/file1.py').not_exists()
+        expect('testdir1/file2.py').not_exists()
+
+    def it_move_directories(self):
+        mv('testdir1', 'testdir3')
+        expect('testdir1').not_exists()
+        expect('testdir3/file1.py').to_be_file()
+        expect('testdir3/file2.py').to_be_file()
 
 
 class WatchClass(FilesBehavior):
