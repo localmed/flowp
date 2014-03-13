@@ -1,5 +1,6 @@
-from flowp.testing import Behavior, skip
-from flowp.files import cd, touch, mkdir, cp, sh, exists, isfile, isdir, pwd, Watch, rm, mv
+from flowp.testing import Behavior, skip, only
+from flowp.files import cd, touch, mkdir, cp, sh, exists, \
+    isfile, isdir, pwd, Watch, rm, mv
 from flowp import testing
 import os
 
@@ -142,7 +143,7 @@ class WatchClass(FilesBehavior):
         self.callback = callback
 
     def it_monitor_files_changes(self):
-        wp = Watch('testdir1/*.py', self.callback)
+        wp = Watch('testdir1/*.py', self.callback, sleep=0)
         expect(self.filename).to_be(False)
         wp.wait_for_files_registered()
         with open('testdir1/file2.py', 'w') as f:
@@ -153,7 +154,7 @@ class WatchClass(FilesBehavior):
         expect(wp.is_alive()).to_be(False)
 
     def it_monitor_new_files(self):
-        wp = Watch('testdir1/*.py', self.callback)
+        wp = Watch('testdir1/*.py', self.callback, sleep=0)
         expect(self.filename).to_be(False)
         wp.wait_for_files_registered()
         touch('testdir1/file3.py')
@@ -163,7 +164,7 @@ class WatchClass(FilesBehavior):
         expect(wp.is_alive()).to_be(False)
 
     def it_monitor_deleted_files(self):
-        wp = Watch('testdir1/*.py', self.callback)
+        wp = Watch('testdir1/*.py', self.callback, sleep=0)
         expect(self.filename).to_be(False)
         wp.wait_for_files_registered()
         rm('testdir1/file2.py')
@@ -174,7 +175,7 @@ class WatchClass(FilesBehavior):
 
     def it_accept_list_of_files(self):
         wp = Watch(['testdir1/file1.py',
-                    'testdir1/file2.py'], self.callback)
+                    'testdir1/file2.py'], self.callback, sleep=0)
         expect(self.filename).to_be(False)
         wp.wait_for_files_registered()
         with open('testdir1/file2.py', 'w') as f:

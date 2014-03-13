@@ -146,6 +146,9 @@ class Watch(threading.Thread):
     :param callback:
         callable(filename, action)
 
+    :param sleep:
+        sleep value for watching loop
+
     ::
 
         def callback(filename, action):
@@ -163,9 +166,10 @@ class Watch(threading.Thread):
     #: File removed action
     DELETE = 3
 
-    def __init__(self, files, callback):
+    def __init__(self, files, callback, sleep=0.2):
         self._stopit = False
         self._files_registered = False
+        self._sleep = sleep
         super().__init__(target=self.loop, args=(files, callback))
         self.start()
 
@@ -217,11 +221,9 @@ class Watch(threading.Thread):
         self._files_registered = True
 
         while True:
+            time.sleep(self._sleep)
             if self._stopit:
                 break
-
-            if isinstance(files_pattern, str):
-                files = glob(files_pattern)
 
             for fn in files:
                 if self._stopit:
@@ -237,3 +239,6 @@ class Watch(threading.Thread):
                 else:
                     files_sizes[fn] = os.path.getsize(fn)
                     callback(fn, self.NEW)
+
+            if isinstance(files_pattern, str):
+                files = glob(files_pattern)
