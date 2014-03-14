@@ -585,6 +585,6 @@ a:hover tt {
     display: none;
 }
 
-#module-flowp\.files .descclassname {
+#flowp-files .descclassname {
     display: none;
 }

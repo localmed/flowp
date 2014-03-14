@@ -1,10 +1,11 @@
 """
-Flowp 1.0
+Flowp 1.1
 ==========
 Flowp is a library which tries to bring the best ideas from Ruby / node.js
-world to Python making development more fun. For version 1.0 module
-flowp.testing is avaiable which allows to write tests in a RSpec BDD
-style with minimum of magic.
+world to Python making development more fun. For version 1.1 module
+flowp.testing is available which allows to write tests in a RSpec BDD
+style with minimum of magic and flowp.files module which brings convenient utils
+for files processing.
 
 Installation
 ------------
@@ -12,9 +13,6 @@ Installation
 
     $ pip3 install flowp
 
-.. note::
-
-    Only for Python >=3.3
 
 
 Quick start
@@ -23,50 +21,50 @@ Test subject (mymodule.py):
 
 .. code-block:: python
 
-    class SomeObject:
-        def __init__(self, logger=None):
-            self._logger = logger
+    class Calculator:
+        def __init__(self):
+            self.special_mode = False
 
-        def count(self, *args):
-            positives = 0
-            for arg in args:
-                if arg > 0:
-                    positives += 1
+        def add(self, a, b):
+            sum = a + b
+            if self.special_mode:
+                sum += 1
+            return sum
 
-            if self._logger:
-                self._logger.info(positives)
-            else:
-                return positives
-
-
-Behavior specyfication (spec_mymodule.py):
+Behavior specification (spec_mymodule.py):
 
 ..  code-block:: python
 
     import mymodule
-    from flowp.testing import Behavior, when, expect
-    from unittest import mock
+    from flowp.testing import Behavior, expect
 
 
-    class SomeObject(Behavior):
+    class Calculator(Behavior):
         def before_each(self):
-            self.subject = mymodule.SomeObject()
+            self.subject = mymodule.Calculator()
 
-        def logger_given(self):
-            self.logger = mock.Mock()
-            self.subject = mymodule.SomeObject(self.logger)
+        def it_add_numbers(self):
+            expect(self.subject.add(1, 2)) == 3
 
-        def it_counts_positive_numbers(self):
-            expect(self.subject.count(-1, 2, -3, 4)) == 2
+        class WhenHaveSpecialMode(Behavior):
+            def before_each(self):
+                self.subject.special_mode = True
 
-        @when(logger_given)
-        def it_sends_results_to_logger(self):
-            self.subject.count(-1, 2, -3, 4)
-            expect(self.logger.info).called_with(2)
+            def it_add_additional_one(self):
+                expect(self.subject.add(1, 2)) == 4
 
-Then run::
+::
 
-    $ python3 -m flowp.testing -v
+    $ python3 -m flowp.testing --watch
+
+Giving --watch flag script will be watching on python files, if
+some changes happen, tests will be reran.
+
+
+Documentation
+---------------
+
+http://flowp.readthedocs.org/en/latest/
 """
 from distutils.core import setup
 
@@ -81,7 +79,7 @@ setup(
     author_email='pawel.galazka@pracli.com',
     packages=['flowp'],
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

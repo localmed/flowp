@@ -13,12 +13,11 @@ Test subject (mymodule.py):
         def __init__(self):
             self.special_mode = False
 
-        def add(a, b):
+        def add(self, a, b):
             sum = a + b
             if self.special_mode:
                 sum += 1
             return sum
-
 
 Behavior specification (spec_mymodule.py):
 
@@ -33,14 +32,14 @@ Behavior specification (spec_mymodule.py):
             self.subject = mymodule.Calculator()
 
         def it_add_numbers(self):
-            expect(self.subject(1, 2)) == 3
+            expect(self.subject.add(1, 2)) == 3
 
         class WhenHaveSpecialMode(Behavior):
             def before_each(self):
                 self.subject.special_mode = True
 
-            it_add_additional_one(self):
-                expect(self.subject(1, 2)) == 4
+            def it_add_additional_one(self):
+                expect(self.subject.add(1, 2)) == 4
 
 ::
 

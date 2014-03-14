@@ -310,6 +310,7 @@ class Runner:
     def get_spec_modules(self):
         """Get modules to tests"""
         files = glob.glob('**/%s*.py' % self.spec_file_prefix)
+        files += glob.glob('%s*.py' % self.spec_file_prefix)
         for fn in files:
             fn = fn.replace(os.path.sep, '.')
             mn = re.sub('\.py$', '', fn)
