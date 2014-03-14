@@ -1,4 +1,4 @@
-from flowp.testing import Behavior, skip, only
+from flowp.testing import Behavior, skip, only, slow
 from flowp.files import cd, touch, mkdir, cp, sh, exists, \
     isfile, isdir, pwd, Watch, rm, mv
 from flowp import testing
@@ -131,6 +131,7 @@ class Mv(FilesBehavior):
         expect('testdir3/file2.py').to_be_file()
 
 
+@slow
 class WatchClass(FilesBehavior):
     def before_each(self):
         FilesBehavior.before_each(self)

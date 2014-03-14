@@ -55,6 +55,11 @@ def skip(obj):
     return obj
 
 
+def slow(obj):
+    obj._slow = True
+    return obj
+
+
 class TemporaryDirectory:
     """tempfile.TemporaryDirectory proxy"""
     def __init__(self):
@@ -108,6 +113,14 @@ class Behavior:
                 return True
         return False
 
+    def _is_slow(self):
+        if hasattr(self, '_slow'):
+            return True
+        for pbehavior in self.parent_behaviors:
+            if hasattr(pbehavior, '_slow'):
+                return True
+        return False
+
     def before_each(self):
         pass
 
@@ -124,7 +137,7 @@ class Behavior:
         for parent_behavior in reversed(self.parent_behaviors):
             parent_behavior.after_each(self)
 
-    def run(self, only_mode=False):
+    def run(self, only_mode=False, fast_mode=False):
         """Run specific test"""
         method = getattr(self, self.method_name)
         self._results.start_test()
@@ -135,6 +148,11 @@ class Behavior:
         if self._is_skipped() or hasattr(method, '_skipped'):
             self._results.add_skipped()
             return None
+        if fast_mode and (hasattr(method, '_slow') or
+                          self._is_slow()):
+            self._results.add_skipped()
+            return None
+
         try:
             self._results.add_executed()
             self._call_before_each_methods()
@@ -340,7 +358,7 @@ class Runner:
                     behavior_class.parent_behaviors + (behavior_class,)
                 self.load_tests(attr, results)
 
-    def run(self):
+    def run(self, fast_mode=False):
         """Looking for behavior subclasses in modules"""
         results = Results()
         start_time = time.time()
@@ -352,7 +370,7 @@ class Runner:
 
         # Run tests
         for behavior in self.loaded_tests:
-            behavior.run(self.only_mode)
+            behavior.run(self.only_mode, fast_mode)
 
         # Print results
         stop_time = time.time()

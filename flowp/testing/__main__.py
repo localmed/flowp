@@ -16,10 +16,11 @@ def rerun(filename, action):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--watch', action='store_true')
+    parser.add_argument('--fast', action='store_true')
     args = parser.parse_args()
 
     if args.watch:
         run()
         Watch(['*.py', '**/*.py'], rerun).wait()
     else:
-        Runner().run()
+        Runner().run(fast_mode=args.fast)
