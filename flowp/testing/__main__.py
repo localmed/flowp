@@ -20,6 +20,6 @@ if __name__ == '__main__':
 
     if args.watch:
         run()
-        Watch('**/*.py', rerun).wait()
+        Watch(['*.py', '**/*.py'], rerun).wait()
     else:
         Runner().run()

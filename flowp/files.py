@@ -207,17 +207,23 @@ class Watch(threading.Thread):
         except KeyboardInterrupt:
             self.stop()
 
+    def _files_list(self, pattern):
+        if isinstance(pattern, str):
+            return glob(pattern)
+
+        l = []
+        for p in pattern:
+            l.extend(glob(p))
+
+        return l
+
     def loop(self, files_pattern, callback):
         # Registering files
-        files_sizes = {}
+        files_mtimes = {}
+        files_list = self._files_list(files_pattern)
 
-        if isinstance(files_pattern, str):
-            fresh_files = glob(files_pattern)
-        else:
-            fresh_files = files_pattern
-
-        for path in fresh_files:
-            files_sizes[path] = os.path.getsize(path)
+        for path in files_list:
+            files_mtimes[path] = os.path.getmtime(path)
 
         self._files_registered = True
 
@@ -229,31 +235,30 @@ class Watch(threading.Thread):
             time.sleep(self._sleep)
 
             # Checking existing files
-            for path in tuple(files_sizes.keys()):
+            for path in tuple(files_mtimes.keys()):
                 if self._stopit:
                     break
 
                 try:
-                    fsize = os.path.getsize(path)
-                    if fsize != files_sizes[path]:
+                    fmtime = os.path.getmtime(path)
+                    if fmtime != files_mtimes[path]:
                         callback(path, self.CHANGE)
-                        files_sizes[path] = fsize
+                        files_mtimes[path] = fmtime
 
                 except FileNotFoundError:
                     callback(path, self.DELETE)
-                    del files_sizes[path]
-                    if path in fresh_files:
-                        fresh_files.remove(path)
+                    del files_mtimes[path]
+                    if path in files_list:
+                        files_list.remove(path)
 
             # Checking new files
-            for path in fresh_files:
+            for path in files_list:
                 if self._stopit:
                     break
 
-                if path not in files_sizes:
-                    files_sizes[path] = os.path.getsize(path)
+                if path not in files_mtimes:
+                    files_mtimes[path] = os.path.getmtime(path)
                     callback(path, self.NEW)
 
-            # Updating files list if glob pattern given
-            if isinstance(files_pattern, str):
-                fresh_files = glob(files_pattern)
+            # Updating files list
+            files_list = self._files_list(files_pattern)
