@@ -7,7 +7,10 @@ import inspect
 import traceback
 import time
 import tempfile
+import argparse
+import subprocess
 from unittest import mock
+from flowp import files
 
 # for traceback passing in test results
 TESTING_FRAME = True
@@ -474,3 +477,22 @@ class expect:
 
     def to_have_been_called_with(self, *args, **kwargs):
         self._context.assert_any_call(*args, **kwargs)
+
+
+class Script:
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--watch', action='store_true')
+        parser.add_argument('--fast', action='store_true')
+        self.args = parser.parse_args()
+
+    def watch_callback(self, filename, action):
+        args = [sys.executable, '-m', 'flowp.testing']
+        if self.args.fast:
+            args.append('--fast')
+        subprocess.call(args)
+
+    def run(self):
+        Runner().run(fast_mode=self.args.fast)
+        if self.args.watch:
+            files.Watch(['*.py', '**/*.py'], self.watch_callback).wait()
