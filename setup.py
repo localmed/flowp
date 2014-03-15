@@ -64,7 +64,7 @@ some changes happen, tests will be reran.
 Documentation
 ---------------
 
-http://flowp.readthedocs.org/en/latest/
+http://pawelgalazka.github.io/flowp/
 """
 from distutils.core import setup
 

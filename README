@@ -6,5 +6,5 @@ flowp.testing is available which allows to write tests in a RSpec BDD
 style with minimum of magic and flowp.files module which brings convenient utils
 for files processing.
 
-    Docs: http://flowp.readthedocs.org/en/latest/
+    Docs: http://pawelgalazka.github.io/flowp/
     PyPi: https://pypi.python.org/pypi/flowp/1.1
