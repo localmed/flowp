@@ -577,6 +577,7 @@ a:hover tt {
 }
 
 /* flowp custom CSS */
+
 .sphinxsidebarwrapper li li li ul {
     display: none;
 }
@@ -587,4 +588,10 @@ a:hover tt {
 
 #flowp-files .descclassname {
     display: none;
+}
+
+img.runner {
+    background-color: black;
+    padding: 20px 253px 20px 20px;
+    margin: 0px -30px;
 }

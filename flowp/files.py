@@ -141,7 +141,7 @@ class Watch(threading.Thread):
 
     :param files:
         files to watch given as glob path or list
-        of files
+        of glob paths
 
     :param callback:
         callable(filename, action)

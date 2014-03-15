@@ -29,8 +29,8 @@ User's guide
 Changes log
 ---------------------
 
-1.1 (2014-03-14)
-^^^^^^^
+1.1 (2014-03-15)
+^^^^^^^^^^^^^^^^^
 * new module: flowp.files utils module
 * flowp.testing: new mechanism independent from unittest module,
   uses only unittest.mock for mocking capabilities

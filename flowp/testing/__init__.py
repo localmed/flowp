@@ -153,7 +153,7 @@ class Behavior:
             return None
         if fast_mode and (hasattr(method, '_slow') or
                           self._is_slow()):
-            self._results.add_skipped()
+            self._results.add_skipped_slow()
             return None
 
         try:
@@ -183,7 +183,7 @@ class Behavior:
                 self._results.print_execution_info(in_place=True)
 
     def mock(self, target=None, attr=None, new=mock.DEFAULT, spec=None):
-        """Create a mock and register it at behavior mocks manager.
+        """Create a mock and register it in behavior mocks manager.
 
         :param target:
             place to patch
@@ -220,6 +220,7 @@ class Results:
         self.skipped = 0
         self.executed = 0
         self.all = 0
+        self.skipped_slow = 0
 
     def start_test(self):
         pass
@@ -232,6 +233,9 @@ class Results:
 
     def add_skipped(self):
         self.skipped += 1
+
+    def add_skipped_slow(self):
+        self.skipped_slow += 1
 
     def add_executed(self):
         self.executed += 1
@@ -257,6 +261,8 @@ class Results:
         self.stream.write('Executed %s of %s ' % (self.executed, self.all))
         if self.skipped:
             self.stream.write('(%s skipped) ' % self.skipped)
+        if self.skipped_slow:
+            self.stream.write('(%s too slow) ' % self.skipped_slow)
         if failures:
             self.stream.red('(%s FAILED) ' % failures)
         else:

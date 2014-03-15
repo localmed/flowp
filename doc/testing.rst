@@ -46,7 +46,10 @@ Behavior specification (spec_mymodule.py):
     $ python3 -m flowp.testing --watch
 
 Giving --watch flag script will be watching on python files, if
-some changes happen, tests will be reran.
+some changes happen, tests will be rerun.
+
+.. image:: _static/runner.png
+    :class: runner
 
 Expectations
 -------------
@@ -176,6 +179,11 @@ Skips tests. Can be used on behavior class or test method.
 ^^^^^^^
 Opposite of skip. It will execute behaviors or methods which have @only decorator rest
 will be skipped.
+
+
+@slow
+^^^^^^^
+Mark test as slow. It will be skipped when '--fast' flag to script given.
 
 
 Mocking
