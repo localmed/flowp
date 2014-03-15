@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>flowp.task &mdash; flowp 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/flasky.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="flowp 1.1 documentation" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+  
+  
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">flowp 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="flowp-task">
+<h1>flowp.task<a class="headerlink" href="#flowp-task" title="Permalink to this headline">¶</a></h1>
+<p>Module provides simple framework for universal task management. At this point
+it can be used either for building process, package management or scaffolding.</p>
+<div class="section" id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+<p>Create file taskfile.py:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flowp</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="k">class</span> <span class="nc">Plugin</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Hello </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the same directory run task script from command line:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>task hello
+Hello !
+<span class="nv">$ </span>task hello:world
+Hello world!
+</pre></div>
+</div>
+<p>Code can be also placed in $HOME/.task/plugins/somename.py, but then task &#8216;hello&#8217;
+will be available globally, independently from the working directory.</p>
+</div>
+<div class="section" id="plugins">
+<h2>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h2>
+<p>They are the basic component of the framework. Plugins are the classes
+which contains task methods or other plugins instances and inherit from
+flowp.task.Plugin class. They can be stored in the python files in 3 locations:</p>
+<ol class="arabic simple">
+<li>./taskfile.py</li>
+<li>./.task/plugins/*.py</li>
+<li>$HOME/.task/plugins/*.py</li>
+</ol>
+<p>Task script create a top plugin class which will inherit from all Plugin classes,
+which inherit from flowp.task.Plugin and are founded in the locations above.
+Order corresponds to order of multi-inheriting (mro).</p>
+<p>Then top plugin class will instantiated and proper methods will be invoked
+by given arguments.</p>
+<p>This have some important consequences:</p>
+<ul class="simple">
+<li>you can create global and local plugins, so global tasks or task specyfic for
+a project can be simply distincted</li>
+<li>task methods founded in the plugins will be avaiable from task script (task command)</li>
+</ul>
+<p>You can do imports from 2 last locations (.task/plugins):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">task.plugins</span> <span class="kn">import</span> <span class="n">some_plugin</span>
+</pre></div>
+</div>
+<p>or from task file</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">taskfile</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="namespacing">
+<h2>Namespacing<a class="headerlink" href="#namespacing" title="Permalink to this headline">¶</a></h2>
+<p>Namespaces can be created by placing task plugin into another:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flowp</span> <span class="kn">import</span> <span class="n">task</span>
+
+
+<span class="k">class</span> <span class="nc">Nm2</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="s">&quot;2&quot;</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Hello &quot;</span> <span class="o">+</span> <span class="n">who</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Nm1</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="n">nm2</span> <span class="o">=</span> <span class="n">Nm2</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Hello 0&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Hello 1&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Plugin</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="n">nm1</span> <span class="o">=</span> <span class="n">Nm1</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>task nm1
+Hello 0
+<span class="nv">$ </span>task nm1::hello
+Hello 1
+<span class="nv">$ </span>task nm1::nm2::hello
+Hello 2
+<span class="nv">$ </span>task nm1::nm2::hello:world
+Hello world
+</pre></div>
+</div>
+</div>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flowp</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="k">class</span> <span class="nc">Plugin</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">t1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;T1&#39;</span><span class="p">)</span>
+
+    <span class="nd">@task.require</span><span class="p">(</span><span class="n">t1</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">t2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;T2&#39;</span><span class="p">)</span>
+
+    <span class="nd">@task.require</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">t3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;T3&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>task t3
+T1
+T2
+T3
+</pre></div>
+</div>
+</div>
+<div class="section" id="builtin-plugins">
+<h2>Builtin plugins<a class="headerlink" href="#builtin-plugins" title="Permalink to this headline">¶</a></h2>
+<p>sdfsf</p>
+<div class="section" id="install">
+<h3>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h3>
+<p>Invoking:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>task install:web.jquery
+<span class="nv">$ </span>task install:py.flask
+<span class="nv">$ </span>task install::list
+<span class="nv">$ </span>task install::search:jquery
+<span class="nv">$ </span>task uninstall:py.flask
+</pre></div>
+</div>
+<p>Package formula searching algorithm (web.jquery):</p>
+<ol class="arabic simple">
+<li>.task/packages/web/jquery.py</li>
+<li>$HOME/.task/packages/web/jquery.py</li>
+</ol>
+<p>Package formula (jquery.py):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Formula</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Formula</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">install</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">uninstall</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>When invoking with no arguments:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>task install
+</pre></div>
+</div>
+<p>it reads packages info from Formula class from taskfile.py</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Formula</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">install</span><span class="o">.</span><span class="n">Formula</span><span class="p">):</span>
+    <span class="n">requires</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s">&#39;bower.jquery@2.0&#39;</span><span class="p">,</span>
+        <span class="s">&#39;npm.karma&#39;</span><span class="p">,</span>
+        <span class="s">&#39;pip.flask&#39;</span>
+    <span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="scaffold">
+<h3>Scaffold<a class="headerlink" href="#scaffold" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>task scaffold::webapp
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">system</span> <span class="kn">import</span> <span class="n">TaskFile</span><span class="p">,</span> <span class="n">cp</span>
+
+<span class="k">class</span> <span class="nc">TaskFile</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">TaskFile</span><span class="p">):</span>
+    <span class="n">tmpl</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s">&#39;/some/path/templates1&#39;</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">genagnular</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s">&#39;controller&#39;</span><span class="p">:</span>
+            <span class="n">cp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpl</span><span class="p">(</span><span class="s">&#39;ctrl_pattern.js&#39;</span><span class="p">),</span> <span class="s">&#39;controller.js&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">flowp.task</a><ul>
+<li><a class="reference internal" href="#quick-start">Quick start</a></li>
+<li><a class="reference internal" href="#plugins">Plugins</a></li>
+<li><a class="reference internal" href="#namespacing">Namespacing</a></li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#builtin-plugins">Builtin plugins</a><ul>
+<li><a class="reference internal" href="#install">Install</a></li>
+<li><a class="reference internal" href="#scaffold">Scaffold</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/task.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    
+    <a href="http://github.com/pawelgalazka/flowp"><img style="position: fixed; top: 0; right: 0; border: 0;"
+                                                             src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+    
+
+  <div class="footer">
+    &copy; Copyright 2013, Paweł Gałązka.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+  </div>
+  
+  </body>
+</html>

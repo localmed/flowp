@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>flowp.files &mdash; flowp 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/flasky.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="flowp 1.1 documentation" href="index.html" />
+    <link rel="prev" title="flowp.testing" href="testing.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+  
+  
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="testing.html" title="flowp.testing"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">flowp 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="flowp-files">
+<h1>flowp.files<a class="headerlink" href="#flowp-files" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flowp.files</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<span class="target" id="module-flowp.files"></span><dl class="class">
+<dt id="flowp.files.cd">
+<em class="property">class </em><tt class="descclassname">flowp.files.</tt><tt class="descname">cd</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#flowp.files.cd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change working directory. Behave exacly like os.chdir, except
+that it can be used as context manager.
+Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">cd</span><span class="p">(</span><span class="s">&#39;some/path&#39;</span><span class="p">):</span>
+    <span class="c"># do some operations</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>After exiting the context, return to the oryginal working directory.
+This also works but doesn&#8217;t return to the original working dir:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cd</span><span class="p">(</span><span class="s">&#39;some/path&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.cp">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">cp</tt><big>(</big><em>src</em>, <em>dst</em>, <em>r=False</em><big>)</big><a class="headerlink" href="#flowp.files.cp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy files or directories if r=True argument given</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cp</span><span class="p">(</span><span class="s">&#39;dir/file.py&#39;</span><span class="p">,</span> <span class="s">&#39;dir2/file.py&#39;</span><span class="p">)</span>
+<span class="n">cp</span><span class="p">(</span><span class="s">&#39;dir/*.py&#39;</span><span class="p">,</span> <span class="s">&#39;dir2&#39;</span><span class="p">)</span>
+<span class="n">cp</span><span class="p">([</span><span class="s">&#39;file1.py&#39;</span><span class="p">,</span> <span class="s">&#39;file2.py&#39;</span><span class="p">],</span> <span class="s">&#39;dir&#39;</span><span class="p">)</span>
+<span class="n">cp</span><span class="p">(</span><span class="s">&#39;dir1&#39;</span><span class="p">,</span> <span class="s">&#39;dir2&#39;</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.chdir">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">chdir</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#flowp.files.chdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the current working directory to the specified path.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.exists">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">exists</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#flowp.files.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether a path exists.  Returns False for broken symbolic links</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.isdir">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">isdir</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#flowp.files.isdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if the pathname refers to an existing directory.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.isfile">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">isfile</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#flowp.files.isfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether a path is a regular file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.islink">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">islink</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#flowp.files.islink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether a path is a symbolic link</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.glob">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">glob</tt><big>(</big><em>pathname</em><big>)</big><a class="headerlink" href="#flowp.files.glob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of paths matching a pathname pattern.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.ls">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">ls</tt><big>(</big><em>path='.'</em><big>)</big><a class="headerlink" href="#flowp.files.ls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of file names from given path.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.mkdir">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">mkdir</tt><big>(</big><em>path</em>, <em>p=False</em><big>)</big><a class="headerlink" href="#flowp.files.mkdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an empty directory</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>p</strong> &#8211; if true given it creates recursively directories
+from path</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.mv">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">mv</tt><big>(</big><em>src</em>, <em>dst</em><big>)</big><a class="headerlink" href="#flowp.files.mv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move files or directories</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mv</span><span class="p">(</span><span class="s">&#39;dir/file.py&#39;</span><span class="p">,</span> <span class="s">&#39;dir2/file.py&#39;</span><span class="p">)</span>
+<span class="n">mv</span><span class="p">(</span><span class="s">&#39;dir/*.py&#39;</span><span class="p">,</span> <span class="s">&#39;dir2&#39;</span><span class="p">)</span>
+<span class="n">mv</span><span class="p">([</span><span class="s">&#39;file1.py&#39;</span><span class="p">,</span> <span class="s">&#39;file2.py&#39;</span><span class="p">],</span> <span class="s">&#39;dir&#39;</span><span class="p">)</span>
+<span class="n">mv</span><span class="p">(</span><span class="s">&#39;dir1&#39;</span><span class="p">,</span> <span class="s">&#39;dir2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.pwd">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">pwd</tt><big>(</big><big>)</big><a class="headerlink" href="#flowp.files.pwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return current working directory</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.rm">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">rm</tt><big>(</big><em>path</em>, <em>r=False</em><big>)</big><a class="headerlink" href="#flowp.files.rm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a file or whole directory if
+r=True argument given.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.sh">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">sh</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#flowp.files.sh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes shell command as is</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flowp.files.touch">
+<tt class="descclassname">flowp.files.</tt><tt class="descname">touch</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#flowp.files.touch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an empty file</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="flowp.files.Watch">
+<em class="property">class </em><tt class="descclassname">flowp.files.</tt><tt class="descname">Watch</tt><big>(</big><em>files</em>, <em>callback</em>, <em>sleep=0.2</em><big>)</big><a class="headerlink" href="#flowp.files.Watch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and start watch thread that will watch
+files and call given callable if some of the
+watch actions occurs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>files</strong> &#8211; files to watch given as glob path or list
+of glob paths</li>
+<li><strong>callback</strong> &#8211; callable(filename, action)</li>
+<li><strong>sleep</strong> &#8211; sleep value for watching loop</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="n">Watch</span><span class="o">.</span><span class="n">CHANGE</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<span class="n">w</span> <span class="o">=</span> <span class="n">Watch</span><span class="p">(</span><span class="s">&#39;*.py&#39;</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+<span class="n">w</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="flowp.files.Watch.CHANGE">
+<tt class="descname">CHANGE</tt><em class="property"> = 2</em><a class="headerlink" href="#flowp.files.Watch.CHANGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>File changed action</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="flowp.files.Watch.DELETE">
+<tt class="descname">DELETE</tt><em class="property"> = 3</em><a class="headerlink" href="#flowp.files.Watch.DELETE" title="Permalink to this definition">¶</a></dt>
+<dd><p>File removed action</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="flowp.files.Watch.NEW">
+<tt class="descname">NEW</tt><em class="property"> = 1</em><a class="headerlink" href="#flowp.files.Watch.NEW" title="Permalink to this definition">¶</a></dt>
+<dd><p>New file action</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flowp.files.Watch.stop">
+<tt class="descname">stop</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#flowp.files.Watch.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop watch process. If timeout given stop
+process after given time.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flowp.files.Watch.stop_when">
+<tt class="descname">stop_when</tt><big>(</big><em>predicate</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#flowp.files.Watch.stop_when" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop watch process when callable predicate()
+evaluates to True. If timeout given stop
+process after given time.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flowp.files.Watch.wait">
+<tt class="descname">wait</tt><big>(</big><big>)</big><a class="headerlink" href="#flowp.files.Watch.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hold process in the waiting state,
+keep watcher running</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="testing.html" title="previous chapter">flowp.testing</a></li>
+  </ul></li>
+</ul>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/files.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    
+    <a href="http://github.com/pawelgalazka/flowp"><img style="position: fixed; top: 0; right: 0; border: 0;"
+                                                             src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+    
+
+  <div class="footer">
+    &copy; Copyright 2013, Paweł Gałązka.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+  </div>
+  
+  </body>
+</html>
