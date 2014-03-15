@@ -57,6 +57,8 @@ Behavior specification (spec_mymodule.py):
 
     $ python3 -m flowp.testing --watch
 
+
+
 Giving --watch flag script will be watching on python files, if
 some changes happen, tests will be reran.
 
@@ -73,7 +75,7 @@ setup(
     version='1.1',
     description='More fun with Python development',
     long_description=__doc__,
-    url='http://flowp.readthedocs.org/en/latest/',
+    url='http://pawelgalazka.github.io/flowp/',
     license='BSD',
     author='Pawel Galazka',
     author_email='pawel.galazka@pracli.com',
