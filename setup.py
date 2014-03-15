@@ -60,7 +60,7 @@ To run::
 
 
 Giving --watch flag script will be watching on python files, if
-some changes happen, tests will be reran.
+some changes happen, tests will be rerun.
 
 
 Documentation
