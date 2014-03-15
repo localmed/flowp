@@ -53,7 +53,7 @@ Behavior specification (spec_mymodule.py):
             def it_add_additional_one(self):
                 expect(self.subject.add(1, 2)) == 4
 
-::
+To run::
 
     $ python3 -m flowp.testing --watch
 
@@ -72,14 +72,14 @@ from distutils.core import setup
 
 setup(
     name='flowp',
-    version='1.1',
+    version='1.1.1',
     description='More fun with Python development',
     long_description=__doc__,
     url='http://pawelgalazka.github.io/flowp/',
     license='BSD',
     author='Pawel Galazka',
     author_email='pawel.galazka@pracli.com',
-    packages=['flowp'],
+    packages=['flowp', 'flowp.testing'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
