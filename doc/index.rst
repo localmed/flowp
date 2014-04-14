@@ -25,6 +25,7 @@ User's guide
 
     testing
     files
+    doo
 
 Changes log
 ---------------------

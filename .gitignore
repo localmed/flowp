@@ -1,6 +1,7 @@
 *.pyc
 doc/_build
-Session.vim
 .idea
-tags
 .DS_Store
+MANIFEST
+dist
+flowp.egg-info
