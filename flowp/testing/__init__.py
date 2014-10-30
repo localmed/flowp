@@ -10,6 +10,9 @@ import tempfile
 import argparse
 import subprocess
 from unittest import mock
+
+from junit_xml import TestSuite, TestCase
+
 from flowp import files
 
 # for traceback passing in test results
@@ -146,14 +149,14 @@ class Behavior:
         self._results.start_test()
         if only_mode and (not hasattr(method, '_only_mode') and
                           not self._have_only_mode()):
-            self._results.add_skipped()
+            self._results.add_skipped(self)
             return None
         if self._is_skipped() or hasattr(method, '_skipped'):
-            self._results.add_skipped()
+            self._results.add_skipped(self)
             return None
         if fast_mode and (hasattr(method, '_slow') or
                           self._is_slow()):
-            self._results.add_skipped_slow()
+            self._results.add_skipped_slow(self)
             return None
 
         try:
@@ -177,7 +180,7 @@ class Behavior:
             except:
                 self._results.add_failure(sys.exc_info(), self)
             else:
-                self._results.add_success()
+                self._results.add_success(self)
         finally:
             if self._results.executed < self._results.all:
                 self._results.print_execution_info(in_place=True)
@@ -228,13 +231,13 @@ class Results:
     def stop_test(self):
         pass
 
-    def add_success(self):
+    def add_success(self, behavior):
         pass
 
-    def add_skipped(self):
+    def add_skipped(self, behavior):
         self.skipped += 1
 
-    def add_skipped_slow(self):
+    def add_skipped_slow(self, behavior):
         self.skipped_slow += 1
 
     def add_executed(self):
@@ -316,6 +319,42 @@ class Results:
         return False
 
 
+class JunitResults(Results):
+    """Gather informations about test results"""
+    def __init__(self):
+        super().__init__()
+        self.junit_cases = []
+
+    def add_success(self, behavior):
+        super().add_success(behavior)
+        test_case = TestCase(self.get_behaviors_description(behavior))
+        self.junit_cases.append(test_case)
+
+    def add_skipped(self, behavior):
+        super().add_skipped(behavior)
+        test_case = TestCase(self.get_behaviors_description(behavior))
+        test_case.add_skipped_info(message='Skipped')
+        self.junit_cases.append(test_case)
+
+    def add_skipped_slow(self, behavior):
+        super().add_skipped_slow(behavior)
+        test_case = TestCase(self.get_behaviors_description(behavior))
+        test_case.add_skipped_info(message='Test ran too slowly and was skipped.')
+        self.junit_cases.append(test_case)
+
+    def add_failure(self, exc_info, behavior):
+        super().add_failure(exc_info, behavior)
+        test_case = TestCase(self.get_behaviors_description(behavior))
+        test_case.add_failure_info(message='Test Failed', output=self._exc_info_to_string(exc_info))
+        self.junit_cases.append(test_case)
+
+    def print(self, time_taken):
+        super().print(time_taken)
+        test_suite = TestSuite("Test Results", self.junit_cases)
+        with open('output.xml', 'w') as f:
+            TestSuite.to_file(f, [test_suite], prettyprint=True)
+
+
 class Runner:
     """Parse script arguments and run tests"""
     test_method_prefix = 'it_'
@@ -367,9 +406,9 @@ class Runner:
                     behavior_class.parent_behaviors + (behavior_class,)
                 self.load_tests(attr, results)
 
-    def run(self, fast_mode=False):
+    def run(self, fast_mode=False, junit=False):
         """Looking for behavior subclasses in modules"""
-        results = Results()
+        results = JunitResults() if junit else Results()
         start_time = time.time()
         # Load tests
         for module in self.get_spec_modules():
@@ -490,6 +529,7 @@ class Script:
         parser = argparse.ArgumentParser()
         parser.add_argument('--watch', action='store_true')
         parser.add_argument('--fast', action='store_true')
+        parser.add_argument('--junit', action='store_true')
         self.args = parser.parse_args()
 
     def watch_callback(self, filename, action):
@@ -499,6 +539,6 @@ class Script:
         subprocess.call(args)
 
     def run(self):
-        Runner().run(fast_mode=self.args.fast)
+        Runner().run(fast_mode=self.args.fast, junit=self.args.junit)
         if self.args.watch:
             files.Watch(['*.py', '**/*.py'], self.watch_callback).wait()

@@ -80,6 +80,9 @@ setup(
     author='Pawel Galazka',
     author_email='pawel.galazka@pracli.com',
     packages=['flowp', 'flowp.testing'],
+    install_requires=[
+        'junit-xml>=1.3'
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
