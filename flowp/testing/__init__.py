@@ -1,4 +1,3 @@
-import glob
 import os.path
 import re
 import importlib
@@ -10,9 +9,8 @@ import tempfile
 import argparse
 import subprocess
 from unittest import mock
-
+from glob2 import glob
 from junit_xml import TestSuite, TestCase
-
 from flowp import files
 
 # for traceback passing in test results
@@ -375,8 +373,7 @@ class Runner:
 
     def get_spec_modules(self):
         """Get modules to tests"""
-        files = glob.glob('**/%s*.py' % self.spec_file_prefix)
-        files += glob.glob('%s*.py' % self.spec_file_prefix)
+        files = glob('**/%s*.py' % self.spec_file_prefix)
         for fn in files:
             fn = fn.replace(os.path.sep, '.')
             mn = re.sub('\.py$', '', fn)
